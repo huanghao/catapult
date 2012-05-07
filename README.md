@@ -1,4 +1,3 @@
-catapult
-========
+自动发布工具
 
-deploy system
+使用fabric批量向remote server执行发布命令
