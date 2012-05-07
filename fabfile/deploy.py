@@ -1,10 +1,10 @@
 import os
 import datetime
 
-from fabric.api import task, abort, local, cd, lcd, runs_once, run, prompt
+from fabric.api import abort, local, cd, lcd, runs_once, prompt
 from fabric.contrib import project
 
-from state import myenv, load_proj_env
+from state import myenv
 from ops import mc, ProjTask
 
 

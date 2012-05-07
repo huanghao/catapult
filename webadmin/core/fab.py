@@ -44,7 +44,6 @@ def fab():
 if __name__ == '__main__':
     def sig_handler(sig, stack):
         print 'recv %d' % sig
-        term()
 
     import signal
     signal.signal(signal.SIGINT, sig_handler)

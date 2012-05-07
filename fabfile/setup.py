@@ -4,7 +4,7 @@ from fabric.api import settings, sudo, hide, abort
 from fabric.tasks import execute
 from fabric.contrib import files
 
-from state import myenv, load_proj_env
+from state import myenv
 from ops import mc, is_owner, ProjTask
 
 

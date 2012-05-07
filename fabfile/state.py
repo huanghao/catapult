@@ -1,6 +1,6 @@
 import os,sys
 
-from fabric.api import env, abort
+from fabric.api import env
 from fabric.state import _AttributeDict
 
 

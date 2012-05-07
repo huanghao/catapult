@@ -1,6 +1,6 @@
-from fabric.api import task, run, cd, abort
+from fabric.api import cd, abort
 
-from state import myenv, load_proj_env
+from state import myenv
 from ops import mc, count_releases, get_current_rel, get_latest_rel, ProjTask
 
 
