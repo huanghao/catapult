@@ -54,16 +54,25 @@ def is_python_module(path):
 def symlink_python_module(path):
     from distutils import sysconfig
     lib = sysconfig.get_python_lib()
-    cmd = 'ln -s %s %s' % \
-        (path,
-         os.path.join(lib, os.path.basename(path)))
-    sudo(cmd)
+    target = os.path.join(lib, os.path.basename(path))
+
+    if files.exists(target):
+        sudo('rm %s' % target)
+    sudo('ln -s %s %s' % (path, target))
 
 
-class pysetup(basic_setup):
+class setup(basic_setup):
 
     def work(self, ver=None, *args, **kw):
-        super(pysetup, self).work()
+        if 'pre_setup' in myenv:
+            for cmd in myenv.pre_setup:
+                mc(cmd)
+
+        super(setup, self).work()
+
+        if 'post_setup' in myenv:
+            for cmd in myenv.post_setup:
+                mc(cmd)
 
         if ver:
             execute('deploy', myenv.name, ver, *args, **kw)
@@ -76,17 +85,3 @@ class pysetup(basic_setup):
 
         for path in myenv.link_py_modules:
             symlink_python_module(path)
-
-
-class setup(pysetup):
-
-    def work(self, *args, **kw):
-        if 'pre_setup' in myenv:
-            for cmd in myenv.pre_setup:
-                mc(cmd)
-
-        super(setup, self).work(*args, **kw)
-
-        if 'post_setup' in myenv:
-            for cmd in myenv.post_setup:
-                mc(cmd)

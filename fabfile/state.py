@@ -32,7 +32,7 @@ def load_project_fields(project):
        for key in ('name', 'home', 'svn')))
 
     def split_and_filter(text):
-        return filter(None, text.split('\n'))
+        return filter(None, map(lambda i: i.strip().rstrip('\r'), text.split('\n')))
 
     myenv.update(((key, split_and_filter(getattr(project, key)))
        for key in ('pre_setup', 'post_setup',
