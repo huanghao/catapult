@@ -58,8 +58,9 @@ class deploy(ProjTask):
         local('svn export %s %s' % (svn, workcopy))
         with lcd(workcopy):
             local("echo '%s' > TAG" % svn)
-            rev = local("svn info %s | head -n5 | tail -n1 | cut -d: -f2 | xargs" % svn).stdout
-            local("echo '%s' > REV" % rev) #FIXME! this rev is always empty, i don't know why
+            rev = local("svn info %s | head -n5 | tail -n1 |\
+cut -d: -f2 | xargs" % svn, capture=True).stdout
+            local("echo '%s' > REV" % rev)
         return pid, workcopy
 
     def upload(self, workcopy):
