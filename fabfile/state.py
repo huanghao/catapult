@@ -40,4 +40,5 @@ def load_project_fields(project):
                    'pre_rollback', 'post_rollback',
                    'link_py_modules',
                    )))
-    return
+
+    myenv.hosts = [ h.ip for h in project.hosts.all() ]
