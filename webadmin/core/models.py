@@ -21,11 +21,11 @@ class Proj(models.Model):
 
 class Host(models.Model):
 
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, blank=True)
     ip = models.CharField(max_length=255, unique=True)
 
     def __unicode__(self):
-        if self.name == self.ip:
-            return self.name
+        if not self.name or self.name == self.ip:
+            return self.ip
         return '%s(%s)' % (self.name, self.ip)
     

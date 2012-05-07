@@ -4,3 +4,8 @@ smoking.db.json is the serialized db data
 for example:
 [catapult/webadmin]$ python manage.py loaddata ../tests/smoking.db.json 
 Installed 4 object(s) from 1 fixture(s)
+
+#FIXME:
+loaddata does not work correctly with ManyToManyField
+http://pastebin.com/BZ2vGK0W
+
