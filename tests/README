@@ -1,0 +1,6 @@
+you can load the simple data for testing
+smoking.db.json is the serialized db data
+
+for example:
+[catapult/webadmin]$ python manage.py loaddata ../tests/smoking.db.json 
+Installed 4 object(s) from 1 fixture(s)

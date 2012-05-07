@@ -1,0 +1,56 @@
+<title>Polling Test</title>
+<script type='text/javascript' src='http://code.jquery.com/jquery-1.7.2.min.js'></script>
+<script>
+
+function inc_fetch(url, onmsg, onclose) {
+    var pos = 0;
+
+    var get_new_data = function(rsp) {
+        var prev = pos;
+        pos = rsp.length;
+        return rsp.substring(prev);
+    }
+
+    var client = new XMLHttpRequest();
+    client.onreadystatechange = function() {
+        if (this.readyState == 3) {
+            //console.debug("onreadystatechange: status="+this.status+", readyState="+this.readyState);
+            onmsg(get_new_data(this.responseText));
+        }
+        else if (this.readyState == 4 && onclose) {
+            onclose();
+        }
+    };
+    client.open("GET", url);
+    client.send();
+}
+
+function add_line(msg) {
+    var line = $('<div class="output">').text(msg);
+    $('.stdout').append(line);
+    scrollTo(line.offset().left, line.offset().top);
+}
+
+function echo(msg) {
+    var lines = msg.split('\n');
+    for (var i=0; i<lines.length; ++i)
+	add_line(lines[i]);
+}
+
+function term() {
+    $.ajax('/term', {success: function(data) {
+	console.debug(data);
+    }});
+}
+</script>
+
+
+<h1>Detail</h1>
+<div class='stdout' style='border:1px solid blue'></div>
+
+<input id='start' type='button' value='start' onclick='inc_fetch("/poll", echo, function() {add_line(">>>")})' />
+<input id='start' type='button' value='term' onclick='term()' />
+
+<script>
+</script>
+
