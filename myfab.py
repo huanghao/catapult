@@ -16,7 +16,7 @@ def hosts_of_project():
             skip = False
             continue
         elif arg.startswith('-'):
-            skip = True
+            skip = True #FIXME! there are options without corresponding value
             continue
         task_and_params = arg.split(':', 1)
         if len(task_and_params) > 1:
