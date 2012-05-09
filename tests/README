@@ -1,5 +1,5 @@
 ==============
-use these commands to fetch change history between two version/reversion
+use these commands to fetch change history between two version/revision
 
 $ svn diff --summarize --old=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1 --new=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2
 A       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1/new_dir
