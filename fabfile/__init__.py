@@ -8,6 +8,7 @@ import rollback
 #TODO: shuold make some install/register mechanism
 T = (setup.setup,
      deploy.deploy,
+     deploy.ideploy,
      rollback.rollback,
      )
 

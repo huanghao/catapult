@@ -1,7 +1,23 @@
-you can load the simple data for testing
-smoking.db.json is the serialized db data
+==============
+use these commands to fetch change history between two version/reversion
 
-for example:
+$ svn diff --summarize --old=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1 --new=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2
+A       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1/new_dir
+A       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1/new_file
+M       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1/notify/README
+
+$ svn diff --summarize --old=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2 --new=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.1
+D       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2/new_dir
+D       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2/new_file
+M       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2/notify/README
+
+$ svn diff --summarize --old=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2 --new=https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2 -r 1122:1123
+M       https://svn.intra.umessage.com.cn/repos/paymix/docnotify/tags/v0.9.2/new_file
+
+
+==============
+use the following command to dump/load fixture data from/to db
+
 [catapult/webadmin]$ python manage.py loaddata ../tests/smoking.db.json 
 Installed 4 object(s) from 1 fixture(s)
 

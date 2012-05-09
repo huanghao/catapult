@@ -1,20 +1,17 @@
 import os
 import datetime
 
-from fabric.api import abort, local, cd, lcd, runs_once, prompt
+from fabric.api import abort, local, cd, lcd, runs_once, prompt, run
 from fabric.contrib import project
 
 from state import myenv
 from ops import mc, ProjTask
-
-
-def get_local_time():
-    return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+from timeline import get_local_time
 
 
 def get_full_svn_path(ver, svn_type):
     if svn_type == 'ver':
-        return os.path.join(myenv.svn, ver)
+        return os.path.join(myenv.svn, 'tags', ver)
     elif svn_type == 'addr':
         return ver
     else:
@@ -23,27 +20,26 @@ def get_full_svn_path(ver, svn_type):
 
 class deploy(ProjTask):
 
-    def work(self, *args, **kw):
+    def work(self, ver=None, *args, **kw):
         if 'pre_deploy' in myenv:
             for cmd in myenv.pre_deploy:
                 mc(cmd)
 
-        self.deploy(*args, **kw)
+        if ver is None:
+            ver = prompt('No version found. Please specify version:')
+        self.deploy(ver, *args, **kw)
 
         if 'post_deploy' in myenv:
             for cmd in myenv.post_deploy:
                 mc(cmd)
 
-    def deploy(self, ver=None, svn_type='ver', *args, **kw):
+    def deploy(self, ver, svn_type='ver', *args, **kw):
         '''
         1.export svn tag at local workcopy
         2.put workcopy to remote releases/xxx
         3.remove current symlink
         4.make a new current symlink which refers to dir created in step.2
         '''
-        if not ver:
-            ver = prompt('No version found. Please specify version:')
-
         pid, workcopy = self.make_workcopy(ver, svn_type)
         self.upload(workcopy)
         self.rearrange_hier(pid)
@@ -71,6 +67,18 @@ cut -d: -f2 | xargs" % svn, capture=True).stdout
     def rearrange_hier(self, pid):
         with cd(myenv.home):
             mc('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
-            mc('rm -f current')
-            mc('ln -s releases/%s current' % pid)
+            relink_cur_rel('releases/%s' % pid)
 
+
+from timeline import *
+
+class ideploy(deploy):
+
+    def deploy(self, ver, *args, **kw):
+        with cd(myenv.home):
+            msg = run('cat current/TAG').stdout
+            tag = TagName(msg)
+            print tag.full
+            print tag.short
+            print tag.tag
+            

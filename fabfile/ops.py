@@ -25,6 +25,16 @@ def get_latest_rel():
     with cd(myenv.home):
         return run('ls -At releases | head -n 1').stdout
 
+def relink_current_rel(rel):
+    if not os.path.isabs(rel):
+        rel = os.path.join(myenv.home, rel)
+
+    if files.exists(rel):
+        with cd(myenv.home):
+            mc('rm -f current')
+            mc('ln -s %s current' % rel)
+    else:
+        abort('wrong path:%s' % rel)
 
 def is_owner(path):
     return mc('id -u').stdout == run('stat -f"%%u" %s' % path).stdout
