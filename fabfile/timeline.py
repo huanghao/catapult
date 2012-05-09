@@ -1,43 +1,54 @@
-from fabric.api import runs_once
+import os
+import datetime
+
+from fabric.api import runs_once, local, lcd, cd, abort
+from fabric.contrib import project
 
 from state import myenv
+from ops import mc, relink_current_rel, get_current_rel, mark, svn_revision
 
 
 class SmartName(object):
 
-    def __init__(self, name):
-        if self.is_svn_path(name):
-            self.full = name
-            self.short = self.to_short(name)
+    def __init__(self, full_path_or_repo, tag=None, base=None):
+        fpor = full_path_or_repo
+        if tag is not None and base is not None:
+            self.repo = fpor
+            self.tag = tag
+            self.base = base
+        elif self.is_svn_url(fpor):
+            self.repo, left = fpor.split('/tags/', 1)
+            self.tag, self.base = (left.split('/', 1)+[''])[:2]
         else:
-            self.short = name
-            self.full = os.path.join(myenv.svn, name)
+            self.repo = myenv.svn
+            self.tag, self.base = (fpor.split('/', 1)+[''])[:2]
 
-    def to_short(self, name):
-        short = name.replace(myenv.svn, '')
-        if self.is_svn_path(short):
-            abort('inapprehensive name:%s' % name)
-        if short.startswith('/'):
-            return short[1:]
-        return short
+    def is_svn_url(self, path):
+        return '://' in path
 
-    def is_svn_path(self, name):
-        return '://' in name
+    def spawn(self, tag):
+        return SmartName(self.repo, tag, self.base)
 
     def __str__(self):
-        return self.short
+        return os.path.join(self.repo, 'tags', self.tag, self.base)
 
+    def __eq__(self, r):
+        return str(self) == str(r)
 
-class TagName(SmartName):
+    def __ne__(self, r):
+        return not self == r
 
-    def __init__(self, name):
-        if self.is_svn_path(name):
-            super(TagName, self).__init__(name)
-        else:
-            super(TagName, self).__init__(os.path.join('tags', name))
-        tags, self.tag = self.short.split('/')
-        if tags != 'tags':
-            abort('illegal tag url:%s' % name)
+    def __lt__(self, r):
+        return str(self) < str(r)
+
+    def __le__(self, r):
+        return (self == r) or (self < r)
+
+    def __gt__(self, r):
+        return str(self) > r
+
+    def __ge__(self, r):
+        return (self == r) or (self > r)
 
 
 def get_local_time():
@@ -45,33 +56,33 @@ def get_local_time():
 
 
 def fetch_changelist(old, new, rev1=None, rev2=None):
-    cmd = ['svn diff --summarize ',
-           '--old=', old,
-           '--new=', new,
+    cmd = ['svn diff --summarize',
+           '--old=' + str(old),
+           '--new=' + str(new),
            ]
 
     if rev1 and rev2:
-        cmd += [' -r',
-                str(rev1),
-                ':',
-                str(rev2),
-                ]
-    return local(cmd, capture=True).stdout
+        cmd.append('-r%s:%s' % (rev1, rev2))
+    return local(' '.join(cmd), capture=True).stdout
 
 
 def parse_changelist(svnlog):
+    print 'CHANGE HISTORY:'
+    print svnlog
+    print '-'*10
     for line in svnlog.split('\n'):
         action, path = line.split()
-        yield action, path
+        yield action, SmartName(path)
 
 
 @runs_once
-def build_timeline():
-    svn = 'https://svn.intra.umessage.com.cn/repos/paymix/docnotify'
-    
-    old = os.path.join(svn, 'tags', tag1)
-    new = os.path.join(svn ,'tags', tag2)
-    svnlog = fetch_changelist(old, new)
+def prepare_inc(old, new):
+    if old == new:
+        abort('can not deploy a duplicated version:%s' % new.tag)
+
+    svnlog = fetch_changelist(old, new).strip()
+    if not svnlog:
+        abort('no difference was found between two versions:%s:%s' % (old.tag, new.tag))
 
     dfiles = []
     rfiles = []
@@ -81,43 +92,54 @@ def build_timeline():
         else:
             rfiles.append(path)
 
-    rdir = make_local_replace_files_copy(rfiles)
+    return make_inc_workcopy(rfiles, new), dfiles
 
-    return rdir, dfiles
+def make_inc_workcopy(rfiles, new):
+    hid = get_local_time()
+    hdir = os.path.join(myenv.ltmp, hid)
+    local('mkdir %s' % hdir)
 
-def make_local_replace_files_copy(rfiles):
-    hotfix = os.path.join(myevn.ltmp, get_local_time())
-    local('mkdir %s' % hotfix)
-
-    with lcd(hotfix):
+    with lcd(hdir):
         for fname in rfiles:
-            dname = os.path.dirname(fname)
-            local('mkdir -p %s' % dname)
-            with lcd(dname):
-                local('svn export %s' % fname)
-                
-    return hotfix
+            dname = os.path.dirname(fname.base)
+            if dname and not os.path.exists(dname):
+                local('mkdir -p %s' % dname)
+                with lcd(dname):
+                    local('svn export %s' % fname.spawn(new.tag))
+            else:
+                local('svn export %s' % fname.spawn(new.tag))
 
-def apply_timeline():
-    rdir, dfiles, hotfix_id = build_timeline()
+    rev = svn_revision(str(new))
+    mark(hdir, str(new), rev)
+
+    return hid, hdir
+
+def apply_timeline(tag, ver):
+    old = SmartName(tag)
+    new = SmartName(ver)
+
+    (hotfix_id, lhotfix), dfiles = prepare_inc(old, new)
 
     hotfix = backup(hotfix_id)
-    overwrite(rdir)
-    remove_useless(dfiles)
-    relink_cur_rel(hotfix)
+    overwrite(lhotfix, hotfix)
+    remove_useless(hotfix, dfiles)
+    relink_current_rel(hotfix)
+
 
 def backup(hotfix_id):
     curr = get_current_rel()
-    hotfix = '%s.hotfix.%s' % (curr, hotfix_id)
+    hotfix = '%s_%s' % (curr, hotfix_id)
     mc('cp -r %s %s' % (curr, hotfix)) #FIXME: this cp will break up the normal rollback chain
     return hotfix
 
-def overwrite(hotfix, rdir):
-    project.upload_project(rdir, myenv.tmp)
+
+def overwrite(lhotfix, hotfix):
     with cd(myenv.tmp):
-        mc('cp -r %s %s' % rdir, hotfix)
+        project.upload_project(lhotfix, myenv.tmp)
+        mc('cp -r %s/* %s' % (os.path.basename(lhotfix), hotfix))
+
 
 def remove_useless(hotfix, dfiles):
-    with cd(myenv.home):
+    with cd(hotfix):
         for fname in dfiles:
-            mc('rm -f %s' % fname)
+            mc('rm -rf %s' % fname.base)

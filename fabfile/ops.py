@@ -1,12 +1,15 @@
 import os
 
-from fabric.api import sudo, cd, run, prompt, abort
+from fabric.api import sudo, cd, run, prompt, abort, local, lcd
 from fabric.tasks import Task
+from fabric.contrib import files
 
 from state import myenv, load_proj_env
 
 
 def mc(*args, **kw):
+    #FIXME: change a name
+    #TODO: support myenv in shell running, for sudo,run,etc.
     return sudo(*args, user=myenv.user, **kw)
 
 
@@ -38,6 +41,18 @@ def relink_current_rel(rel):
 
 def is_owner(path):
     return mc('id -u').stdout == run('stat -f"%%u" %s' % path).stdout
+
+def mark(target, tag, rev):
+    #TODO: make a deploy chain through a file called "PREV"
+    with lcd(target):
+        local("echo '%s' > TAG" % tag)
+        local("echo '%s' > REV" % rev)
+
+def svn_revision(svn):
+    return local("svn info %s | head -n8 | tail -n1 |\
+cut -d: -f2 | xargs" % svn, capture=True).stdout
+
+
 
 
 class MyTask(Task):

@@ -1,12 +1,11 @@
 import os
-import datetime
 
-from fabric.api import abort, local, cd, lcd, runs_once, prompt, run
+from fabric.api import abort, local, cd, runs_once, prompt, run
 from fabric.contrib import project
 
 from state import myenv
-from ops import mc, ProjTask
-from timeline import get_local_time
+from ops import mc, ProjTask, mark, svn_revision, relink_current_rel
+from timeline import get_local_time, apply_timeline
 
 
 def get_full_svn_path(ver, svn_type):
@@ -52,33 +51,29 @@ class deploy(ProjTask):
         workcopy = os.path.join(myenv.ltmp, pid)
 
         local('svn export %s %s' % (svn, workcopy))
-        with lcd(workcopy):
-            local("echo '%s' > TAG" % svn)
-            rev = local("svn info %s | head -n8 | tail -n1 |\
-cut -d: -f2 | xargs" % svn, capture=True).stdout
-            local("echo '%s' > REV" % rev)
+        rev = svn_revision(svn)
+        mark(workcopy, svn, rev)
         return pid, workcopy
 
     def upload(self, workcopy):
         with cd(myenv.tmp):
+            #FIXME: i think it a bug
+            #when calling the upload_project function,
+            #must cd to remote target directory,
+            #otherwise it will fail to find the uploaded file.
+
             #TODO: this function will do tar,untar,remove many times in localhost
             project.upload_project(workcopy, myenv.tmp)
 
     def rearrange_hier(self, pid):
         with cd(myenv.home):
             mc('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
-            relink_cur_rel('releases/%s' % pid)
+            relink_current_rel('releases/%s' % pid)
 
-
-from timeline import *
 
 class ideploy(deploy):
 
     def deploy(self, ver, *args, **kw):
         with cd(myenv.home):
-            msg = run('cat current/TAG').stdout
-            tag = TagName(msg)
-            print tag.full
-            print tag.short
-            print tag.tag
-            
+            tag1 = run('cat current/TAG').stdout #FIXME: now assume that all TAG are the same among all servers
+            apply_timeline(tag1, ver)
