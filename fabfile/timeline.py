@@ -5,7 +5,7 @@ from fabric.api import runs_once, local, lcd, cd, abort
 from fabric.contrib import project
 
 from state import myenv
-from ops import mc, relink_current_rel, get_current_rel, mark, svn_revision
+from ops import mc, relink_current_rel, get_current_rel, mark, svn_revision, path_exists
 
 
 class SmartName(object):
@@ -55,7 +55,7 @@ def get_local_time():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
-def fetch_changelist(old, new, rev1=None, rev2=None):
+def fetch_changelist(old, new, rev1, rev2):
     cmd = ['svn diff --summarize',
            '--old=' + str(old),
            '--new=' + str(new),
@@ -76,13 +76,13 @@ def parse_changelist(svnlog):
 
 
 @runs_once
-def prepare_inc(old, new):
-    if old == new:
-        abort('can not deploy a duplicated version:%s' % new.tag)
+def prepare_inc(old, new, rev1, rev2):
+    if old == new and rev1 == rev2:
+        abort('can not deploy a duplicated (version, revision):(%s, %s)' % (new.tag, rev1))
 
-    svnlog = fetch_changelist(old, new).strip()
+    svnlog = fetch_changelist(old, new, rev1, rev2).strip()
     if not svnlog:
-        abort('no difference was found between two versions:%s:%s' % (old.tag, new.tag))
+        abort('no difference was found between two versions:%s:%s:%s:%s' % (old.tag, new.tag, rev1, rev2))
 
     dfiles = []
     rfiles = []
@@ -102,23 +102,24 @@ def make_inc_workcopy(rfiles, new):
     with lcd(hdir):
         for fname in rfiles:
             dname = os.path.dirname(fname.base)
-            if dname and not os.path.exists(dname):
-                local('mkdir -p %s' % dname)
+            if dname:
+                if not path_exists(dname):
+                    local('mkdir -p %s' % dname)
                 with lcd(dname):
-                    local('svn export %s' % fname.spawn(new.tag))
+                    local('svn export --force %s' % fname.spawn(new.tag))
             else:
-                local('svn export %s' % fname.spawn(new.tag))
+                local('svn export --force %s' % fname.spawn(new.tag))
 
     rev = svn_revision(str(new))
     mark(hdir, str(new), rev)
 
     return hid, hdir
 
-def apply_timeline(tag, ver):
+def apply_timeline(tag, ver, rev1=None, rev2=None):
     old = SmartName(tag)
     new = SmartName(ver)
 
-    (hotfix_id, lhotfix), dfiles = prepare_inc(old, new)
+    (hotfix_id, lhotfix), dfiles = prepare_inc(old, new, rev1, rev2)
 
     hotfix = backup(hotfix_id)
     overwrite(lhotfix, hotfix)

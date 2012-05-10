@@ -1,11 +1,18 @@
 import os
 
-from fabric.api import sudo, cd, run, prompt, abort, local, lcd
+from fabric.api import sudo, cd, run, prompt, abort, local, lcd, settings, hide
 from fabric.tasks import Task
 from fabric.contrib import files
 
 from state import myenv, load_proj_env
 
+def path_exists(path):
+    '''
+    use this instead of os.path.exists when testing whether local path exists,
+    it consider context that set by lcd
+    '''
+    with settings(hide('warnings'), warn_only=True):
+        return local('test -e "%s"' % path).succeeded
 
 def mc(*args, **kw):
     #FIXME: change a name
@@ -32,12 +39,15 @@ def relink_current_rel(rel):
     if not os.path.isabs(rel):
         rel = os.path.join(myenv.home, rel)
 
-    if files.exists(rel):
+    #if files.exists(rel, verbose=True):
+    #FIXME: have no idea that why the above command does not work
+    #Warning: run() encountered an error (return code 1) while executing 'test -e "$(echo /usr/local/nds/releases/20120510140214)"'
+    if run("test -e '%s'" % rel).succeeded:
         with cd(myenv.home):
             mc('rm -f current')
             mc('ln -s %s current' % rel)
     else:
-        abort('wrong path:%s' % rel)
+        abort('no such path, relink current failed:%s' % rel)
 
 def is_owner(path):
     return mc('id -u').stdout == run('stat -f"%%u" %s' % path).stdout

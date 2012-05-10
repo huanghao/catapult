@@ -73,7 +73,9 @@ class deploy(ProjTask):
 
 class ideploy(deploy):
 
-    def deploy(self, ver, *args, **kw):
+    def deploy(self, ver, rev1=None, rev2=None, *args, **kw):
         with cd(myenv.home):
-            tag1 = run('cat current/TAG').stdout #FIXME: now assume that all TAG are the same among all servers
+            tag1 = run('cat current/TAG').stdout
+            #FIXME: now assume that all TAG are the same among all servers
+            #add check consistency before deploy
             apply_timeline(tag1, ver)
