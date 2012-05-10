@@ -1,6 +1,6 @@
 import os,sys
 
-from fabric.api import env
+from fabric.api import env, abort
 from fabric.state import _AttributeDict
 
 
@@ -26,7 +26,10 @@ def load_proj_env(proj):
     install_webadmin_path()
 
     from webadmin.core.models import Proj
-    load_project_fields(Proj.objects.get(name=proj))
+    try:
+        load_project_fields(Proj.objects.get(name=proj))
+    except Proj.DoesNotExist:
+        abort('unknown project:%s' % proj)
 
 
 def load_project_fields(project):
