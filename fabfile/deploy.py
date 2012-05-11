@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import abort, local, cd, runs_once, prompt, run
+from fabric.api import abort, local, cd, runs_once, prompt, run, sudo
 from fabric.contrib import project
 
 from state import myenv
@@ -69,6 +69,7 @@ class deploy(ProjTask):
         with cd(myenv.home):
             mc('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
             relink_current_rel('releases/%s' % pid)
+            sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
 
 
 class ideploy(deploy):
