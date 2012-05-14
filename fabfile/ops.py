@@ -6,13 +6,19 @@ from fabric.contrib import files
 
 from state import myenv, load_proj_env
 
-def path_exists(path):
+def lpath_exists(path):
     '''
     use this instead of os.path.exists when testing whether local path exists,
     it consider context that set by lcd
     '''
     with settings(hide('warnings'), warn_only=True):
         return local('test -e "%s"' % path).succeeded
+
+
+def path_exists(path):
+    with settings(hide('warnings'), warn_only=True):
+        return run('test -e "%s"' % path).succeeded
+
 
 def mine(*args, **kw):
     #TODO: support myenv in shell running, for sudo,run,etc.
@@ -26,33 +32,51 @@ def count_releases():
 
         
 def get_current_rel():
+    cur = None
     with cd(myenv.home):
-        return os.path.join(myenv.home, run('readlink current').stdout)
+        if path_exists('current'):
+            cur = os.path.join(myenv.home, run('readlink current').stdout)
+    return cur if cur and path_exists(cur) else None
 
 
 def get_latest_rel():
     with cd(myenv.home):
         return run('ls -At releases | head -n 1').stdout
 
-def relink_current_rel(rel):
+def relink_current_rel(rel, link_prev=True):
     if not os.path.isabs(rel):
         rel = os.path.join(myenv.home, rel)
 
     #if files.exists(rel, verbose=True):
     #FIXME: have no idea that why the above command does not work
     #Warning: run() encountered an error (return code 1) while executing 'test -e "$(echo /usr/local/nds/releases/20120510140214)"'
-    if run("test -e '%s'" % rel).succeeded:
+    if path_exists(rel):
+        if link_prev:
+            cur = get_current_rel()
+            if cur:
+                with cd(rel):
+                    mine('echo "%s" > PREV' % cur)
+
         with cd(myenv.home):
             mine('rm -f current')
             mine('ln -s %s current' % rel)
     else:
         abort('no such path, relink current failed:%s' % rel)
 
+
+def get_prev_rel():
+    prev = None
+    with cd(os.path.join(myenv.home, 'current')):
+        if path_exists('PREV'):
+            prev = run('cat PREV').stdout
+
+    return prev if prev and path_exists(prev) else None
+
+
 def is_owner(path):
     return mine('id -u').stdout == run('stat -f"%%u" %s' % path).stdout
 
 def mark(target, tag, rev):
-    #TODO: make a deploy chain through a file called "PREV"
     with lcd(target):
         local("echo '%s' > TAG" % tag)
         local("echo '%s' > REV" % rev)

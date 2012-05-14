@@ -5,7 +5,7 @@ from fabric.api import runs_once, local, lcd, cd, abort
 from fabric.contrib import project
 
 from state import myenv
-from ops import mine, relink_current_rel, get_current_rel, mark, svn_revision, path_exists
+from ops import mine, relink_current_rel, get_current_rel, mark, svn_revision, lpath_exists
 
 
 class SmartName(object):
@@ -103,7 +103,7 @@ def make_inc_workcopy(rfiles, new):
         for fname in rfiles:
             dname = os.path.dirname(fname.base)
             if dname:
-                if not path_exists(dname):
+                if not lpath_exists(dname):
                     local('mkdir -p %s' % dname)
                 with lcd(dname):
                     local('svn export --force %s' % fname.spawn(new.tag))
