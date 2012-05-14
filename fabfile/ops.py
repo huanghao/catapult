@@ -88,13 +88,8 @@ cut -d: -f2 | xargs" % svn, capture=True).stdout
 
 
 
-class MyTask(Task):
 
-    def set_name(self, name):
-        self.name = name
-
-
-class ProjTask(MyTask):
+class ProjTask(Task):
     '''
     base class for project oriented task
     '''
