@@ -9,6 +9,7 @@ import rollback
 T = (setup.setup,
      deploy.deploy,
      deploy.ideploy,
+     deploy.check,
      rollback.rollback,
      )
 

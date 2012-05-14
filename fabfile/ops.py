@@ -15,7 +15,6 @@ def path_exists(path):
         return local('test -e "%s"' % path).succeeded
 
 def mine(*args, **kw):
-    #FIXME: change a name
     #TODO: support myenv in shell running, for sudo,run,etc.
     return sudo(*args, user=myenv.owner, **kw)
 

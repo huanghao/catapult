@@ -1,7 +1,8 @@
 import os
 
-from fabric.api import abort, local, cd, runs_once, prompt, run, sudo
+from fabric.api import abort, local, cd, runs_once, prompt, run, sudo, env
 from fabric.contrib import project
+from fabric.tasks import execute
 
 from state import myenv
 from ops import mine, ProjTask, mark, svn_revision, relink_current_rel
@@ -69,7 +70,33 @@ class deploy(ProjTask):
         with cd(myenv.home):
             mine('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
             relink_current_rel('releases/%s' % pid)
-            sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
+            #FIXME: this is a bug, if localhost is one of the remote hosts,
+            #workcopy dir and upload target dir are the same
+            #and this rm will remove the dir,
+            #when comming the second host, deploy will failed to find the workcopy dir
+            #sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
+
+
+class check(ProjTask):
+
+    def work(self, *args, **kw):
+        version_info = self.collect()
+
+        if hasattr(self, 'version_info'):
+            if self.version_info != version_info:
+                abort('corrupt version. %s(%s) != %s(%s)' \
+                    % (self.last_host, self.version_info,
+                       env.host, version_info))
+        else:
+            self.version_info = version_info
+            self.last_host = env.host
+
+    def collect(self):
+        with cd(os.path.join(myenv.home, 'current')):
+            return {
+                'TAG': run('cat TAG').stdout,
+                'REV': run('cat REV').stdout,
+                }
 
 
 class ideploy(deploy):
@@ -77,6 +104,4 @@ class ideploy(deploy):
     def deploy(self, ver, rev1=None, rev2=None, *args, **kw):
         with cd(myenv.home):
             tag1 = run('cat current/TAG').stdout
-            #FIXME: now assume that all TAG are the same among all servers
-            #add check consistency before deploy
             apply_timeline(tag1, ver)
