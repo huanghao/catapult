@@ -5,7 +5,7 @@ from fabric.api import runs_once, local, lcd, cd, abort
 from fabric.contrib import project
 
 from state import myenv
-from ops import mc, relink_current_rel, get_current_rel, mark, svn_revision, path_exists
+from ops import mine, relink_current_rel, get_current_rel, mark, svn_revision, path_exists
 
 
 class SmartName(object):
@@ -20,7 +20,7 @@ class SmartName(object):
             self.repo, left = fpor.split('/tags/', 1)
             self.tag, self.base = (left.split('/', 1)+[''])[:2]
         else:
-            self.repo = myenv.svn
+            self.repo = myenv.cvs_path
             self.tag, self.base = (fpor.split('/', 1)+[''])[:2]
 
     def is_svn_url(self, path):
@@ -130,17 +130,17 @@ def apply_timeline(tag, ver, rev1=None, rev2=None):
 def backup(hotfix_id):
     curr = get_current_rel()
     hotfix = '%s_%s' % (curr, hotfix_id)
-    mc('cp -r %s %s' % (curr, hotfix)) #FIXME: this cp will break up the normal rollback chain
+    mine('cp -r %s %s' % (curr, hotfix)) #FIXME: this cp will break up the normal rollback chain
     return hotfix
 
 
 def overwrite(lhotfix, hotfix):
     with cd(myenv.tmp):
         project.upload_project(lhotfix, myenv.tmp)
-        mc('cp -r %s/* %s' % (os.path.basename(lhotfix), hotfix))
+        mine('cp -r %s/* %s' % (os.path.basename(lhotfix), hotfix))
 
 
 def remove_useless(hotfix, dfiles):
     with cd(hotfix):
         for fname in dfiles:
-            mc('rm -rf %s' % fname.base)
+            mine('rm -rf %s' % fname.base)

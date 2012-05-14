@@ -4,11 +4,12 @@ from django.db import models
 class Proj(models.Model):
 
     name            = models.CharField(max_length=255, unique=True)
-    home            = models.TextField()
-    cvsmodel        = models.TextField()
-    cvsuser         = models.TextField(blank=True)
-    cvspass         = models.TextField(blank=True)
-    svn             = models.TextField()
+    home            = models.CharField(max_length=255)
+    owner           = models.CharField(max_length=255, default='mc')
+    cvs_model       = models.CharField(max_length=255, default='svn')
+    cvs_path        = models.TextField()
+    cvs_user        = models.CharField(max_length=255, blank=True)
+    cvs_pass        = models.CharField(max_length=255, blank=True)
     link_py_modules = models.TextField(blank=True)
     pre_setup       = models.TextField(blank=True)
     post_setup      = models.TextField(blank=True)
@@ -24,6 +25,7 @@ class Proj(models.Model):
 
 class Host(models.Model):
 
+    ip              = models.CharField(max_length=255, unique=True)
     name            = models.CharField(max_length=255, blank=True)
     model           = models.CharField(max_length=255, blank=True)
     description     = models.TextField(blank=True)
@@ -35,19 +37,19 @@ class Host(models.Model):
     memory          = models.CharField(max_length=255, blank=True)
     disk            = models.CharField(max_length=255, blank=True)
     assetno         = models.CharField(max_length=255, blank=True)
-    idc             = models.ForeignKey('Idc', blank=True)
     cabinet         = models.CharField(max_length=255, blank=True)
     position        = models.CharField(max_length=255, blank=True)
-    ip              = models.CharField(max_length=255, unique=True)
+    idc             = models.ForeignKey('IDC', blank=True)
 
     def __unicode__(self):
         if not self.name or self.name == self.ip:
             return self.ip
         return '%s(%s)' % (self.name, self.ip)
-    
-class Idc(models.Model):
 
-    name = models.CharField(max_length=255, unique=True)
+    
+class IDC(models.Model):
+
+    name    = models.CharField(max_length=255, unique=True)
     cabinet = models.CharField(max_length=255, blank=True)
 
     def __unicode__(self):

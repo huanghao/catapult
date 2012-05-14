@@ -5,8 +5,6 @@ from fabric.state import _AttributeDict
 
 
 myenv = env.myenv = _AttributeDict({
-    'user': 'mc', #FIXME: make this env to project-ware
-    'workspaces': '/usr/local',
     'ltmp': '/tmp', # local temp path
     'tmp': '/tmp', # remote temp path
     #FIXME: tmp path need to cleanup automaticly
@@ -34,7 +32,9 @@ def load_proj_env(proj):
 
 def load_project_fields(project):
     myenv.update(((key, getattr(project, key))
-       for key in ('name', 'home', 'svn')))
+       for key in ('name', 'home', 'owner',
+                   'cvs_model', 'cvs_path', 'cvs_user', 'cvs_pass',
+                   )))
 
     def split_and_filter(text):
         return filter(None, map(lambda i: i.strip().rstrip('\r'), text.split('\n')))

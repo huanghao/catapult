@@ -1,7 +1,7 @@
 from fabric.api import cd, abort
 
 from state import myenv
-from ops import mc, count_releases, get_current_rel, get_latest_rel, ProjTask
+from ops import mine, count_releases, get_current_rel, get_latest_rel, ProjTask
 
 
 def check():
@@ -25,11 +25,11 @@ class rollback(ProjTask):
                 abort('no previous version to rollback')
 
             rel = get_current_rel()
-            mc('rm -rf %s' % rel)
+            mine('rm -rf %s' % rel)
 
             latest = get_latest_rel()
             if not latest:
                 abort('no latest version for rollback')
 
-            mc('rm -f current')
-            mc('ln -s releases/%s current' % latest)
+            mine('rm -f current')
+            mine('ln -s releases/%s current' % latest)

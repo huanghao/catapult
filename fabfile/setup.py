@@ -5,7 +5,7 @@ from fabric.tasks import execute
 from fabric.contrib import files
 
 from state import myenv
-from ops import mc, is_owner, ProjTask
+from ops import mine, is_owner, ProjTask
 
 
 class basic_setup(ProjTask):
@@ -28,11 +28,11 @@ class basic_setup(ProjTask):
 
         with settings(hide('warnings'), warn_only=True):
             if not sudo('mkdir %s' % myenv.home).failed:
-                sudo('chown -R %s %s' % (myenv.user, myenv.home))
+                sudo('chown -R %s %s' % (myenv.owner, myenv.home))
 
     def build_hier(self):
         for path in self.yield_hier():
-            mc('mkdir -p %s' % path)
+            mine('mkdir -p %s' % path)
 
     def yield_hier(self):
         for dname in self.hier:
@@ -66,13 +66,13 @@ class setup(basic_setup):
     def work(self, ver=None, *args, **kw):
         if 'pre_setup' in myenv:
             for cmd in myenv.pre_setup:
-                mc(cmd)
+                mine(cmd)
 
         super(setup, self).work()
 
         if 'post_setup' in myenv:
             for cmd in myenv.post_setup:
-                mc(cmd)
+                mine(cmd)
 
         if ver:
             execute('deploy', myenv.name, ver, *args, **kw)

@@ -4,13 +4,13 @@ from fabric.api import abort, local, cd, runs_once, prompt, run, sudo
 from fabric.contrib import project
 
 from state import myenv
-from ops import mc, ProjTask, mark, svn_revision, relink_current_rel
+from ops import mine, ProjTask, mark, svn_revision, relink_current_rel
 from timeline import get_local_time, apply_timeline
 
 
 def get_full_svn_path(ver, svn_type):
     if svn_type == 'ver':
-        return os.path.join(myenv.svn, 'tags', ver)
+        return os.path.join(myenv.cvs_path, 'tags', ver)
     elif svn_type == 'addr':
         return ver
     else:
@@ -22,7 +22,7 @@ class deploy(ProjTask):
     def work(self, ver=None, *args, **kw):
         if 'pre_deploy' in myenv:
             for cmd in myenv.pre_deploy:
-                mc(cmd)
+                mine(cmd)
 
         if ver is None:
             ver = prompt('No version found. Please specify version:')
@@ -30,7 +30,7 @@ class deploy(ProjTask):
 
         if 'post_deploy' in myenv:
             for cmd in myenv.post_deploy:
-                mc(cmd)
+                mine(cmd)
 
     def deploy(self, ver, svn_type='ver', *args, **kw):
         '''
@@ -67,7 +67,7 @@ class deploy(ProjTask):
 
     def rearrange_hier(self, pid):
         with cd(myenv.home):
-            mc('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
+            mine('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
             relink_current_rel('releases/%s' % pid)
             sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
 

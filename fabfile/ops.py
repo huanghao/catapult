@@ -14,10 +14,10 @@ def path_exists(path):
     with settings(hide('warnings'), warn_only=True):
         return local('test -e "%s"' % path).succeeded
 
-def mc(*args, **kw):
+def mine(*args, **kw):
     #FIXME: change a name
     #TODO: support myenv in shell running, for sudo,run,etc.
-    return sudo(*args, user=myenv.user, **kw)
+    return sudo(*args, user=myenv.owner, **kw)
 
 
 def count_releases():
@@ -44,13 +44,13 @@ def relink_current_rel(rel):
     #Warning: run() encountered an error (return code 1) while executing 'test -e "$(echo /usr/local/nds/releases/20120510140214)"'
     if run("test -e '%s'" % rel).succeeded:
         with cd(myenv.home):
-            mc('rm -f current')
-            mc('ln -s %s current' % rel)
+            mine('rm -f current')
+            mine('ln -s %s current' % rel)
     else:
         abort('no such path, relink current failed:%s' % rel)
 
 def is_owner(path):
-    return mc('id -u').stdout == run('stat -f"%%u" %s' % path).stdout
+    return mine('id -u').stdout == run('stat -f"%%u" %s' % path).stdout
 
 def mark(target, tag, rev):
     #TODO: make a deploy chain through a file called "PREV"
