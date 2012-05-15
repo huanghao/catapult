@@ -5,7 +5,9 @@ from fabric.tasks import Task
 class hostinfo(Task):
 
     def run(self, *args, **kw):
-        print env.host
-        sudo('dmidecode -t system -t processor -t memory')
-        run('df -h')
+        info = self.parse_dmi()
+
+    def parse_dmi(self):
+        dmi = sudo('dmidecode -t system -t processor -t memory').stdout
+        print dmi
 

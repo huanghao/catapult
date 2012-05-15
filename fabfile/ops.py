@@ -12,12 +12,12 @@ def lpath_exists(path):
     it consider context that set by lcd
     '''
     with settings(hide('warnings'), warn_only=True):
-        return local('test -e "%s"' % path).succeeded
+        return local("test -e '%s'" % path).succeeded
 
 
 def path_exists(path):
     with settings(hide('warnings'), warn_only=True):
-        return run('test -e "%s"' % path).succeeded
+        return run("test -e '%s'" % path).succeeded
 
 
 def mine(*args, **kw):
@@ -55,7 +55,7 @@ def relink_current_rel(rel, link_prev=True):
             cur = get_current_rel()
             if cur:
                 with cd(rel):
-                    mine('echo "%s" > PREV' % cur)
+                    mine("echo '%s' > PREV" % cur)
 
         with cd(myenv.home):
             mine('rm -f current')

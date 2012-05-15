@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import settings, sudo, hide, abort
+from fabric.api import settings, sudo, hide, abort, run
 from fabric.tasks import execute
 from fabric.contrib import files
 
@@ -66,13 +66,13 @@ class setup(basic_setup):
     def work(self, ver=None, *args, **kw):
         if 'pre_setup' in myenv:
             for cmd in myenv.pre_setup:
-                mine(cmd)
+                run(cmd)
 
         super(setup, self).work()
 
         if 'post_setup' in myenv:
             for cmd in myenv.post_setup:
-                mine(cmd)
+                run(cmd)
 
         if ver:
             execute('deploy', myenv.name, ver, *args, **kw)

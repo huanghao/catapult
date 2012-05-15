@@ -32,14 +32,14 @@ class Host(models.Model):
     manufacturer    = models.CharField(max_length=255, blank=True)
     product         = models.CharField(max_length=255, blank=True)
     serial          = models.CharField(max_length=255, blank=True)
-    uuid            = models.CharField(max_length=255, blank=True)
+    uuid            = models.CharField(max_length=255, unique=True)
     cpu             = models.CharField(max_length=255, blank=True)
     memory          = models.CharField(max_length=255, blank=True)
     disk            = models.CharField(max_length=255, blank=True)
     assetno         = models.CharField(max_length=255, blank=True)
     cabinet         = models.CharField(max_length=255, blank=True)
     position        = models.CharField(max_length=255, blank=True)
-    idc             = models.ForeignKey('IDC', blank=True)
+    idc             = models.ForeignKey('IDC', null=True)
 
     def __unicode__(self):
         if not self.name or self.name == self.ip:

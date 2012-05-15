@@ -23,7 +23,7 @@ class deploy(ProjTask):
     def work(self, ver=None, *args, **kw):
         if 'pre_deploy' in myenv:
             for cmd in myenv.pre_deploy:
-                mine(cmd)
+                run(cmd)
 
         if ver is None:
             ver = prompt('No version found. Please specify version:')
@@ -31,7 +31,7 @@ class deploy(ProjTask):
 
         if 'post_deploy' in myenv:
             for cmd in myenv.post_deploy:
-                mine(cmd)
+                run(cmd)
 
     def deploy(self, ver, svn_type='ver', *args, **kw):
         '''
