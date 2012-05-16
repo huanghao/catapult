@@ -34,20 +34,22 @@ class deploy(ProjTask):
 
     def deploy(self, ver, ver_type='ver', *args, **kw):
         rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver, ver_type)
-        pid, workcopy = self.make_workcopy(rc)
-
         sch = schema.Cap(myenv.home)
+
+        pid, workcopy = self.make_workcopy(rc, sch)
+
         self.upload(sch, workcopy, pid)
 
-        sch.push(pid)
-        sch.switch2(pid)
+        sch.save_current_for_rollback(pid)
+        sch.switch_current_to(pid)
 
     @runs_once #runs_once is incompatible with --parallel
-    def make_workcopy(self, rc):
+    def make_workcopy(self, rc, sch):
         pid = get_local_time()
         workcopy = os.path.join(myenv.ltmp, pid)
 
         rc.export(workcopy)
+        sch.mark(rc, workcopy)
         return pid, workcopy
 
     def upload(self, sch, workcopy, pid):
@@ -70,6 +72,8 @@ class deploy(ProjTask):
 class check(ProjTask):
 
     def work(self, *args, **kw):
+        sch = schema.Cap(myenv.home)
+
         version_info = self.collect()
 
         if hasattr(self, 'version_info'):

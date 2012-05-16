@@ -27,10 +27,6 @@ class SVN(object):
 
     def export(self, target):
         local("svn export '%s' '%s'" % (self.path, target))
-        with lcd(target):
-            local("echo '%s' > TAG" % self.path)
-            local("echo '%s' > REV" % self.rev)
-
 
     def query_revision(self):
         return local("svn info %s | head -n8 | tail -n1 |\

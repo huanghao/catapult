@@ -1,4 +1,4 @@
-from fabric.api import settings, sudo, hide, abort, run
+from fabric.api import settings, sudo, hide, abort, run, env
 from fabric.tasks import execute
 
 from state import myenv
@@ -35,9 +35,8 @@ class setup(basic_setup):
         self.post()
 
         if ver:
-            execute('deploy', myenv.name, ver, *args, **kw)
-            self.link_path()
-
+            self.deploy_and_link_py(ver, *args, **kw)
+    
     def pre(self):
         if 'pre_setup' in myenv:
             for cmd in myenv.pre_setup:
@@ -48,7 +47,16 @@ class setup(basic_setup):
             for cmd in myenv.post_setup:
                 run(cmd)
 
-    def link_path(self):
+    def deploy_and_link_py(self, ver, *args, **kw):
+        bak = env.hosts
+        env.hosts = [env.host] #it's tricky
+
+        execute('deploy', myenv.name, ver, *args, **kw)
+        self.link_py()
+
+        env.hosts = bak
+
+    def link_py(self):
         for path in myenv.link_py_modules:
             if not is_python_module(path):
                 abort("not a python module: %s" % path)

@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import settings, abort
+from fabric.api import settings, abort, lcd, local
 
 
 from ops import mine, path_exists
@@ -46,7 +46,7 @@ class Cap(object):
             abort('try to overwrite a exists release:%s->%s' % (src, rel))
         mine("cp -r '%s' '%s'" % (src, rel))
 
-    def switch2(self, rel):
+    def switch_current_to(self, rel):
         '''
         switch curernt link to rel.
         if operation failed, leave current link unchanged
@@ -71,7 +71,7 @@ class Cap(object):
             rollback()
             abort('switch failed, rollback to original')
 
-    def push(self, rel):
+    def save_current_for_rollback(self, rel):
         path = self.release(rel, True)
         curr = self.current_release()
         mine("echo '%s' > '%s'" % (curr, os.path.join(path, 'PREV')))
@@ -94,3 +94,10 @@ class Cap(object):
                             yield os.path.join(self.home, parent, child)
                     else:
                         yield os.path.join(self.home, parent, childs)
+
+    def mark(self, rc, target):
+        with lcd(target):
+            local("echo '%s' > TAG" % rc.path)
+            local("echo '%s' > REV" % rc.rev)
+
+
