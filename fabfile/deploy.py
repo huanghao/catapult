@@ -87,6 +87,8 @@ class check(ProjTask):
 class ideploy(deploy):
 
     def deploy(self, ver, rev1=None, rev2=None, *args, **kw):
+        sch = schema.Cap(myenv.home)
+        tag1 = sch.tag_info()['TAG']
+
         with cd(myenv.home):
-            tag1 = run('cat current/TAG').stdout
             apply_timeline(tag1, ver)
