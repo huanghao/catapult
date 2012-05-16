@@ -1,15 +1,13 @@
 import os
 
-from fabric.api import abort, local, cd, runs_once, prompt, run, sudo, env
+from fabric.api import abort, cd, runs_once, prompt, run, env
 from fabric.contrib import project
-from fabric.tasks import execute
 
 from state import myenv
-from ops import mine, ProjTask, mark, relink_current_rel
+from ops import ProjTask
 from timeline import get_local_time, apply_timeline
 import rcs
 import schema
-
 
 
 class deploy(ProjTask):
@@ -38,9 +36,9 @@ class deploy(ProjTask):
         rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver, ver_type)
         pid, workcopy = self.make_workcopy(rc)
 
-        self.upload(workcopy, pid)
-
         sch = schema.Cap(myenv.home)
+        self.upload(sch, workcopy, pid)
+
         sch.push(pid)
         sch.switch2(pid)
 
@@ -49,11 +47,10 @@ class deploy(ProjTask):
         pid = get_local_time()
         workcopy = os.path.join(myenv.ltmp, pid)
 
-        local(rc.export(workcopy))
-        mark(workcopy, str(rc), rc.rev)
+        rc.export(workcopy)
         return pid, workcopy
 
-    def upload(self, workcopy, pid):
+    def upload(self, sch, workcopy, pid):
         with cd(myenv.tmp):
             #FIXME: i think it a bug
             #when calling the upload_project function,
@@ -62,13 +59,12 @@ class deploy(ProjTask):
 
             #TODO: this function will do tar,untar,remove many times in localhost
             project.upload_project(workcopy, myenv.tmp)
-            with cd(myenv.home):
-                mine('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
-            #FIXME: this is a bug, if localhost is one of the remote hosts,
-            #workcopy dir and upload target dir are the same
-            #and this rm will remove the dir,
-            #when comming the second host, deploy will failed to find the workcopy dir
-            #sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
+        sch.copy_to_release(os.path.join(myenv.tmp, pid), pid)
+        #FIXME: this is a bug, if localhost is one of the remote hosts,
+        #workcopy dir and upload target dir are the same
+        #and this rm will remove the dir,
+        #when comming the second host, deploy will failed to find the workcopy dir
+        #sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
 
 
 class check(ProjTask):

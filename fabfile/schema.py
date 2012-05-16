@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import settings, hide
+from fabric.api import settings, abort
 
 
 from ops import mine, path_exists
@@ -40,6 +40,12 @@ class Cap(object):
             abort('no such release:%s' % rel)
         return rel
 
+    def copy_to_release(self, src, rel):
+        rel = self.release(rel)
+        if path_exists(rel):
+            abort('try to overwrite a exists release:%s->%s' % (src, rel))
+        mine("cp -r '%s' '%s'" % (src, rel))
+
     def switch2(self, rel):
         '''
         switch curernt link to rel.
@@ -69,7 +75,6 @@ class Cap(object):
         path = self.release(rel, True)
         curr = self.current_release()
         mine("echo '%s' > '%s'" % (curr, os.path.join(path, 'PREV')))
-
 
     def build(self):
         '''

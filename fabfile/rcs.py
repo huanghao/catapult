@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import abort, local
+from fabric.api import abort, local, lcd
 
 
 def create(rcs_type, *args, **kw):
@@ -17,13 +17,20 @@ class SVN(object):
 
     def make_full_path(self, base, version, version_type):
         if version_type == 'ver':
-            return os.path.join(base, 'tags', version), version
+            if version == 'trunk':
+                return os.path.join(base, version), version
+            else:
+                return os.path.join(base, 'tags', version), version
         elif version_type == 'path':
-            return base, os.path.basename(base.rstrip('/'))
+            return version, os.path.basename(version.rstrip('/'))
         abort('unknown version_type:%s' % str(version_type))
 
     def export(self, target):
-        return "svn export '%s' '%s'" % (self.path, target)
+        local("svn export '%s' '%s'" % (self.path, target))
+        with lcd(target):
+            local("echo '%s' > TAG" % self.path)
+            local("echo '%s' > REV" % self.rev)
+
 
     def query_revision(self):
         return local("svn info %s | head -n8 | tail -n1 |\

@@ -1,4 +1,4 @@
-from fabric.api import cd, abort, run
+from fabric.api import cd, abort
 
 from state import myenv
 from ops import mine, get_current_rel, ProjTask, get_prev_rel, relink_current_rel

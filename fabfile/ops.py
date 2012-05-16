@@ -2,7 +2,6 @@ import os
 
 from fabric.api import sudo, cd, run, prompt, abort, local, lcd, settings, hide
 from fabric.tasks import Task
-from fabric.contrib import files
 
 from state import myenv, load_proj_env
 

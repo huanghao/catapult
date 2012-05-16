@@ -1,10 +1,8 @@
-import os
-
 from fabric.api import settings, sudo, hide, abort, run
 from fabric.tasks import execute
 
 from state import myenv
-from ops import mine, is_owner, ProjTask, path_exists, is_python_module, symlink_python_module
+from ops import is_owner, ProjTask, path_exists, is_python_module, symlink_python_module
 import schema
 
 
