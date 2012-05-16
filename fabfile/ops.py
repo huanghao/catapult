@@ -83,10 +83,6 @@ def mark(target, tag, rev):
         local("echo '%s' > TAG" % tag)
         local("echo '%s' > REV" % rev)
 
-def svn_revision(svn):
-    return local("svn info %s | head -n8 | tail -n1 |\
-cut -d: -f2 | xargs" % svn, capture=True).stdout
-
 
 def is_python_module(path):
     return path_exists(os.path.join(path, '__init__.py'))

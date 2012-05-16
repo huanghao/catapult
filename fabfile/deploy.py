@@ -5,58 +5,55 @@ from fabric.contrib import project
 from fabric.tasks import execute
 
 from state import myenv
-from ops import mine, ProjTask, mark, svn_revision, relink_current_rel
+from ops import mine, ProjTask, mark, relink_current_rel
 from timeline import get_local_time, apply_timeline
+import rcs
+import schema
 
-
-def get_full_svn_path(ver, svn_type):
-    if svn_type == 'ver':
-        return os.path.join(myenv.cvs_path, 'tags', ver)
-    elif svn_type == 'addr':
-        return ver
-    else:
-        abort('unknown svn_type:%s' % str(svn_type))
 
 
 class deploy(ProjTask):
 
     def work(self, ver=None, *args, **kw):
-        if 'pre_deploy' in myenv:
-            for cmd in myenv.pre_deploy:
-                run(cmd)
+        self.pre()
 
         if ver is None:
             ver = prompt('No version found. Please specify version:')
+
         self.deploy(ver, *args, **kw)
 
+        self.post()
+
+    def pre(self):
+        if 'pre_deploy' in myenv:
+            for cmd in myenv.pre_deploy:
+                run(cmd)
+    
+    def post(self):
         if 'post_deploy' in myenv:
             for cmd in myenv.post_deploy:
                 run(cmd)
 
-    def deploy(self, ver, svn_type='ver', *args, **kw):
-        '''
-        1.export svn tag at local workcopy
-        2.put workcopy to remote releases/xxx
-        3.remove current symlink
-        4.make a new current symlink which refers to dir created in step.2
-        '''
-        pid, workcopy = self.make_workcopy(ver, svn_type)
-        self.upload(workcopy)
-        self.rearrange_hier(pid)
+    def deploy(self, ver, ver_type='ver', *args, **kw):
+        rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver, ver_type)
+        pid, workcopy = self.make_workcopy(rc)
+
+        self.upload(workcopy, pid)
+
+        sch = schema.Cap(myenv.home)
+        sch.push(pid)
+        sch.switch2(pid)
 
     @runs_once #runs_once is incompatible with --parallel
-    def make_workcopy(self, ver, svn_type):
-        svn = get_full_svn_path(ver, svn_type)
-
+    def make_workcopy(self, rc):
         pid = get_local_time()
         workcopy = os.path.join(myenv.ltmp, pid)
 
-        local('svn export %s %s' % (svn, workcopy))
-        rev = svn_revision(svn)
-        mark(workcopy, svn, rev)
+        local(rc.export(workcopy))
+        mark(workcopy, str(rc), rc.rev)
         return pid, workcopy
 
-    def upload(self, workcopy):
+    def upload(self, workcopy, pid):
         with cd(myenv.tmp):
             #FIXME: i think it a bug
             #when calling the upload_project function,
@@ -65,11 +62,8 @@ class deploy(ProjTask):
 
             #TODO: this function will do tar,untar,remove many times in localhost
             project.upload_project(workcopy, myenv.tmp)
-
-    def rearrange_hier(self, pid):
-        with cd(myenv.home):
-            mine('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
-            relink_current_rel('releases/%s' % pid)
+            with cd(myenv.home):
+                mine('cp -r %s releases/' % os.path.join(myenv.tmp, pid))
             #FIXME: this is a bug, if localhost is one of the remote hosts,
             #workcopy dir and upload target dir are the same
             #and this rm will remove the dir,

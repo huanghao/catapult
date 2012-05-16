@@ -31,8 +31,11 @@ class setup(basic_setup):
 
     def work(self, ver=None, *args, **kw):
         self.pre()
+
         super(setup, self).work()
+
         self.post()
+
         if ver:
             execute('deploy', myenv.name, ver, *args, **kw)
             self.link_path()

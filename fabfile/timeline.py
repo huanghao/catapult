@@ -5,7 +5,7 @@ from fabric.api import runs_once, local, lcd, cd, abort
 from fabric.contrib import project
 
 from state import myenv
-from ops import mine, relink_current_rel, get_current_rel, mark, svn_revision, lpath_exists
+from ops import mine, relink_current_rel, get_current_rel, mark, lpath_exists
 
 
 class SmartName(object):
