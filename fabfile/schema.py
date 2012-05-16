@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import settings, abort, lcd, local
+from fabric.api import settings, abort, lcd, local, cd
 
 
 from ops import mine, path_exists
@@ -100,4 +100,9 @@ class Cap(object):
             local("echo '%s' > TAG" % rc.path)
             local("echo '%s' > REV" % rc.rev)
 
-
+    def tag_info(self):
+        with cd(self.current):
+            return {
+                'TAG': mine('cat TAG').stdout,
+                'REV': mine('cat REV').stdout,
+                }

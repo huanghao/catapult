@@ -74,23 +74,14 @@ class check(ProjTask):
     def work(self, *args, **kw):
         sch = schema.Cap(myenv.home)
 
-        version_info = self.collect()
+        info = sch.tag_info()
+        self.check_same(info)
 
-        if hasattr(self, 'version_info'):
-            if self.version_info != version_info:
-                abort('corrupt version. %s(%s) != %s(%s)' \
-                    % (self.last_host, self.version_info,
-                       env.host, version_info))
-        else:
-            self.version_info = version_info
-            self.last_host = env.host
-
-    def collect(self):
-        with cd(os.path.join(myenv.home, 'current')):
-            return {
-                'TAG': run('cat TAG').stdout,
-                'REV': run('cat REV').stdout,
-                }
+    def check_same(self, info):
+        if not hasattr(self, '_info'):
+            self._info = info
+        elif self._info != info:
+            abort('corrupt version %s on host %s' % (str(info), env.host))
 
 
 class ideploy(deploy):
