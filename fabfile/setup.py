@@ -3,7 +3,7 @@ from fabric.tasks import execute
 
 from state import myenv
 from ops import is_owner, ProjTask, path_exists, is_python_module, symlink_python_module
-import schema
+import schemas
 
 
 class basic_setup(ProjTask):
@@ -11,7 +11,7 @@ class basic_setup(ProjTask):
     def work(self):
         home = myenv.home
         self.make_workspace(home)
-        schema.Cap(home).build()
+        schemas.Cap(home).build()
 
     def make_workspace(self, home):
         if path_exists(home):
@@ -22,6 +22,15 @@ make sure you want to reinstall the project:%s' % home)
             with settings(hide('warnings'), warn_only=True):
                 if not sudo('mkdir %s' % home).failed:
                     sudo('chown %s %s' % (myenv.owner, home))
+
+
+class exterminate(ProjTask):
+
+    def work(self):
+        '''
+        it is extremely dangous, and it can only be used for testing
+        '''
+        sudo('rm -rf %s' % myenv.home)
 
 
 

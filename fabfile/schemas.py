@@ -52,26 +52,38 @@ class Cap(object):
         if operation failed, leave current link unchanged
         '''
         path = self.release(rel, True)
-        bak = self.current+'.bak'
 
-        mine('mv %s %s' % (self.current, bak))
-        def rollback():
-            mine('mv %s %s' % (bak, self.current))
-
-        try:
+        def link_to():
             with settings(warn_only=True):
-                ok = mine('ln -s %s %s' % (path, self.current)).succeeded
-        except:
-            rollback()
-            raise
+                return mine('ln -s %s %s' % (path, self.current)).succeeded
 
-        if ok:
-            mine('rm -r %s' % bak)
+        def rollback_if_failed():
+            bak = self.current+'.bak'
+            mine('mv %s %s' % (self.current, bak))
+            def rollback():
+                mine('mv %s %s' % (bak, self.current))
+
+            try:
+                ok = link_to()
+            except:
+                rollback()
+                raise
+
+            if ok:
+                mine('rm -r %s' % bak)
+            else:
+                rollback()
+                abort('switch failed, rollback to original')
+
+        if path_exists(self.current):
+            rollback_if_failed()
         else:
-            rollback()
-            abort('switch failed, rollback to original')
+            link_to()
 
     def save_current_for_rollback(self, rel):
+        if not path_exists(self.current):
+            #for the first time deploy, there is no current link
+            return
         path = self.release(rel, True)
         curr = self.current_release()
         mine("echo '%s' > '%s'" % (curr, os.path.join(path, 'PREV')))

@@ -7,7 +7,7 @@ from state import myenv
 from ops import ProjTask
 from timeline import get_local_time, apply_timeline
 import rcs
-import schema
+import schemas
 
 
 class deploy(ProjTask):
@@ -34,25 +34,25 @@ class deploy(ProjTask):
 
     def deploy(self, ver, ver_type='ver', *args, **kw):
         rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver, ver_type)
-        sch = schema.Cap(myenv.home)
+        schema = schemas.Cap(myenv.home)
 
-        pid, workcopy = self.make_workcopy(rc, sch)
+        pid, workcopy = self.make_workcopy(rc, schema)
 
-        self.upload(sch, workcopy, pid)
+        self.upload(schema, workcopy, pid)
 
-        sch.save_current_for_rollback(pid)
-        sch.switch_current_to(pid)
+        schema.save_current_for_rollback(pid)
+        schema.switch_current_to(pid)
 
     @runs_once #runs_once is incompatible with --parallel
-    def make_workcopy(self, rc, sch):
+    def make_workcopy(self, rc, schema):
         pid = get_local_time()
         workcopy = os.path.join(myenv.ltmp, pid)
 
         rc.export(workcopy)
-        sch.mark(rc, workcopy)
+        schema.mark(rc, workcopy)
         return pid, workcopy
 
-    def upload(self, sch, workcopy, pid):
+    def upload(self, schema, workcopy, pid):
         with cd(myenv.tmp):
             #FIXME: i think it a bug
             #when calling the upload_project function,
@@ -61,7 +61,7 @@ class deploy(ProjTask):
 
             #TODO: this function will do tar,untar,remove many times in localhost
             project.upload_project(workcopy, myenv.tmp)
-        sch.copy_to_release(os.path.join(myenv.tmp, pid), pid)
+        schema.copy_to_release(os.path.join(myenv.tmp, pid), pid)
         #FIXME: this is a bug, if localhost is one of the remote hosts,
         #workcopy dir and upload target dir are the same
         #and this rm will remove the dir,
@@ -72,9 +72,9 @@ class deploy(ProjTask):
 class check(ProjTask):
 
     def work(self, *args, **kw):
-        sch = schema.Cap(myenv.home)
+        schema = schemas.Cap(myenv.home)
 
-        info = sch.tag_info()
+        info = schema.tag_info()
         self.check_same(info)
 
     def check_same(self, info):
@@ -87,8 +87,8 @@ class check(ProjTask):
 class ideploy(deploy):
 
     def deploy(self, ver, rev1=None, rev2=None, *args, **kw):
-        sch = schema.Cap(myenv.home)
-        tag1 = sch.tag_info()['TAG']
+        schema = schemas.Cap(myenv.home)
+        tag1 = schema.tag_info()['TAG']
 
         with cd(myenv.home):
             apply_timeline(tag1, ver)

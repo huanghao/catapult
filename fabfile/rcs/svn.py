@@ -3,13 +3,6 @@ import os
 from fabric.api import abort, local, lcd
 
 
-def create(rcs_type, *args, **kw):
-    if rcs_type.lower().strip() == 'svn':
-        return SVN(*args, **kw)
-    abort('unknown rcs type:%s' % rcs_type)
-    return None # nerver get to this line
-
-
 class SVN(object):
 
     def __init__(self, base, version, version_type):
