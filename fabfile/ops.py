@@ -16,6 +16,10 @@ def lpath_exists(path):
 
 
 def path_exists(path):
+    #if files.exists(rel, verbose=True):
+    #FIXME: have no idea that why the above command does not work
+    #Warning: run() encountered an error (return code 1) while executing 'test -e "$(echo /usr/local/nds/releases/20120510140214)"'
+    #run(...., shell=False) will get correct output
     with settings(hide('warnings'), warn_only=True):
         return run("test -e '%s'" % path).succeeded
 
@@ -47,9 +51,6 @@ def relink_current_rel(rel, link_prev=True):
     if not os.path.isabs(rel):
         rel = os.path.join(myenv.home, rel)
 
-    #if files.exists(rel, verbose=True):
-    #FIXME: have no idea that why the above command does not work
-    #Warning: run() encountered an error (return code 1) while executing 'test -e "$(echo /usr/local/nds/releases/20120510140214)"'
     if path_exists(rel):
         if link_prev:
             cur = get_current_rel()
@@ -74,7 +75,8 @@ def get_prev_rel():
 
 
 def is_owner(path):
-    return mine('id -u').stdout == run('stat -f"%%u" %s' % path).stdout
+    return mine('id -u').stdout == run("stat -f'%%u' %s" % path).stdout
+
 
 def mark(target, tag, rev):
     with lcd(target):
@@ -85,6 +87,19 @@ def svn_revision(svn):
     return local("svn info %s | head -n8 | tail -n1 |\
 cut -d: -f2 | xargs" % svn, capture=True).stdout
 
+
+def is_python_module(path):
+    return path_exists(os.path.join(path, '__init__.py'))
+
+
+def symlink_python_module(path):
+    from distutils import sysconfig
+    lib = sysconfig.get_python_lib()
+    target = os.path.join(lib, os.path.basename(path))
+
+    if path_exists(target):
+        sudo('rm %s' % target)
+    sudo('ln -s %s %s' % (path, target))
 
 
 

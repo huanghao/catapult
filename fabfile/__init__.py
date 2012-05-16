@@ -1,5 +1,5 @@
 from fabric.api import env
-env.shell = '/bin/sh -c'
+env.shell = '/bin/sh -c '
 
 import setup
 import deploy
