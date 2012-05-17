@@ -1,5 +1,8 @@
 import svn
 
+from fabric.api import abort
+
+
 def create(rcs_type, *args, **kw):
     if rcs_type.lower().strip() == 'svn':
         return svn.SVN(*args, **kw)

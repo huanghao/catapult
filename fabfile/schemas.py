@@ -46,6 +46,20 @@ class Cap(object):
             abort('try to overwrite a exists release:%s->%s' % (src, rel))
         mine("cp -r '%s' '%s'" % (src, rel))
 
+    def overwrite_to_release(self, src, rel):
+        rel = self.release(rel)
+        if path_exists(rel):
+            abort('try to overwrite a exists release:%s->%s' % (src, rel))
+        curr = self.current_release(True)
+        mine("cp -r '%s' '%s'" % (curr, rel))
+        mine("cp -r '%s'/* '%s'" % (src, rel))
+
+    def remove_useless(self, rel, Dfiles):
+        rel = self.release(rel, True)
+        with cd(rel):
+            for name in Dfiles:
+                mine('rm -rf %s' % name.base)
+
     def switch_current_to(self, rel):
         '''
         switch curernt link to rel.
