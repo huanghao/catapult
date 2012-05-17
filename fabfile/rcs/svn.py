@@ -61,8 +61,8 @@ class SVN(object):
 
     def make_full_path(self, base, version, version_type):
         if version_type == 'ver':
-            if version == 'trunk':
-                return os.path.join(base, version), version
+            if version is None:
+                return os.path.join(base, 'trunk'), 'trunk'
             else:
                 return os.path.join(base, 'tags', version), version
         elif version_type == 'path':

@@ -19,8 +19,8 @@ class deploy(ProjTask):
     def work(self, ver=None, *args, **kw):
         self.pre()
 
-        if ver is None:
-            ver = prompt('No version found. Please specify version:')
+#        if ver is None:
+#            ver = prompt('No version found. Please specify version:')
 
         self.deploy(ver, *args, **kw)
 
@@ -36,7 +36,7 @@ class deploy(ProjTask):
             for cmd in myenv.post_deploy:
                 run(cmd)
 
-    def deploy(self, ver):
+    def deploy(self, ver=None):
         rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver)
         schema = schemas.Cap(myenv.home)
 

@@ -10,12 +10,13 @@ class Git(object):
     def export(self, target):
         local("git clone '%s' '%s'" % (self.path, target))
         with lcd(target):
-            local("git checkout '%s'" % self.version)
+            if self.version is not None:
+                local("git checkout '%s'" % self.version)
             local("rm -rf .git")
 
     @property
     def ver(self):
-        return self.version
+        return 'HEAD' if self.version is None else self.version
     rev = ver
 
     def __str__(self):
