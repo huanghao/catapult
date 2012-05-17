@@ -56,7 +56,7 @@ class SmartName(object):
 
 class SVN(object):
 
-    def __init__(self, base, version, version_type):
+    def __init__(self, base, version, version_type='ver'):
         self.path, self.version = self.make_full_path(base, version, version_type)
 
     def make_full_path(self, base, version, version_type):

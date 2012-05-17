@@ -36,8 +36,8 @@ class deploy(ProjTask):
             for cmd in myenv.post_deploy:
                 run(cmd)
 
-    def deploy(self, ver, ver_type='ver', *args, **kw):
-        rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver, ver_type)
+    def deploy(self, ver):
+        rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver)
         schema = schemas.Cap(myenv.home)
 
         pid, workcopy = self.make_workcopy(rc, schema)
