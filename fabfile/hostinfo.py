@@ -4,6 +4,11 @@ from fabric.tasks import Task
 from state import update_host
 
 
+def gen_lines(output):
+    for line in output.split('\n'):
+        yield line.rstrip()
+
+
 class hostinfo(Task):
 
     def run(self, *args, **kw):
@@ -14,11 +19,23 @@ class hostinfo(Task):
         update_host(uuid, ips, **info)
 
     def query_ip(self):
-        msg = run('ifconfig').stdout
-        ips = filter(lambda (proto, addr): proto == 'inet' and addr not in ('127.0.0.1', '::1'),
-                     [ line.split()[:2] for line in msg.split('\n') \
-                           if 'inet' in line ])
-        return ips
+        return self.parse_ip(run('ifconfig').stdout)
+
+    def parse_ip(self, msg):
+        for line in gen_lines(msg):
+            if not line:
+                continue
+
+            flag = line[0].isspace()
+            if not flag:
+                inter = line.split(':')[0]
+                interface = None if inter == 'lo0' else inter
+            elif interface:
+                cols = line.split()
+                if len(cols) > 1:
+                    proto, addr = cols[:2]
+                    if proto == 'inet':
+                        yield interface, proto, addr
 
     def query_dmi(self):
         dmi = sudo('dmidecode -t system -t processor -t memory').stdout
@@ -46,11 +63,7 @@ class hostinfo(Task):
                       }
 
     def parse_dmi(self, dmi):
-        def gen_lines():
-            for line in dmi.split('\n'):
-                yield line.rstrip()
-        lines = gen_lines()
-
+        lines = gen_lines(dmi)
         info = {}
         st = 0
 

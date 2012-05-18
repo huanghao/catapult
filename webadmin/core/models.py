@@ -17,7 +17,7 @@ class Proj(models.Model):
     post_deploy     = models.TextField(blank=True)
     pre_rollback    = models.TextField(blank=True)
     post_rollback   = models.TextField(blank=True)
-    ips             = models.ManyToManyField('IP', null=True)
+    ips             = models.ManyToManyField('IP', null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -25,8 +25,9 @@ class Proj(models.Model):
 
 class IP(models.Model):
 
-    addr = models.CharField(max_length=255, null=False, blank=False, unique=True)
-    host = models.ForeignKey('Host', null=True)
+    addr      = models.CharField(max_length=255, null=False, blank=False, unique=True)
+    interface = models.CharField(max_length=255, null=False, blank=False)
+    host      = models.ForeignKey('Host', null=True, blank=True)
 
     def __unicode__(self):
         return self.addr
@@ -47,7 +48,7 @@ class Host(models.Model):
     cabinet         = models.CharField(max_length=255, blank=True)
     position        = models.CharField(max_length=255, blank=True)
     description     = models.TextField(blank=True)
-    idc             = models.ForeignKey('IDC', null=True)
+    idc             = models.ForeignKey('IDC', null=True, blank=True)
 
     def __unicode__(self):
         return self.uuid if not self.name else self.name

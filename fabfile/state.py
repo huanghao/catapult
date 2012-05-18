@@ -37,16 +37,16 @@ def update_host(uuid, ips, **info):
     host.save()
     #FIXME: add transaction
     
-    for proto, addr in ips:
+    for interface, proto, addr in ips:
         try:
             ip = IP.objects.get(addr=addr)
         except IP.DoesNotExist:
-            IP(addr=addr, host=host).save()
+            IP(addr=addr, interface=interface, host=host).save()
         else:
-            if ip.host != host:
+            if not (ip.host == host and ip.interface == interface):
                 ip.host = host
+                ip.interface = interface
                 ip.save()
-
 
 def load_proj_env(proj):
     install_webadmin_path()
@@ -74,4 +74,6 @@ def load_project_fields(project):
                    'link_py_modules',
                    )))
 
-    myenv.hosts = [ ip.addr for ip in project.ips.all() ]
+    hosts = [ ip.addr for ip in project.ips.all() ]
+    if hosts:
+        myenv.hosts = hosts
