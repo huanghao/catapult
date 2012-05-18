@@ -1,4 +1,4 @@
-from fabric.api import env, run, sudo
+from fabric.api import env, run, sudo, hide
 from fabric.tasks import Task
 
 
@@ -8,22 +8,23 @@ class hostinfo(Task):
         self.query_dmi()
 
     def query_dmi(self):
-        dmi = sudo('dmidecode -t system -t processor -t memory').stdout
-        print 'DMI:'
-        print dmi
-        print '-'*40
+        with hide('stdout'):
+            dmi = sudo('dmidecode -t system -t processor -t memory').stdout
 
         info = self.parse(dmi)
-        from pprint import pprint
-        pprint(info)
-        print '-'*10
+        #from pprint import pprint
+        #pprint(info)
+        #print '-'*10
+        def escval(val):
+            return None if val in ('Not Specified', '') else val
 
-        sysinfo = info['System Information'][0]
-        manufacturer = sysinfo['Manufacturer']
-        product = sysinfo['Product Name']
-        serial = sysinfo['Serial Number']
-        cpu = [ i['Version'] for i in info['Processor Information'] ]
-        sizes = [ i['Size'].split() for i in info['Memory Device'] ]
+        sysinfo = escval(info['System Information'][0])
+        manufacturer = escval(sysinfo['Manufacturer'])
+        product = escval(sysinfo['Product Name'])
+        uuid = escval(sysinfo['UUID'])
+        serial = escval(sysinfo['Serial Number'])
+        cpu = filter(None, [ escval(i['Version']) for i in info['Processor Information'] ])
+        sizes = [ i['Size'].split() for i in info['Memory Device'] if i['Size'][0].isdigit() ]
         total = sum([ int(i[0]) for i in sizes ])
         unit = sizes[0][1] # assume that at least one memory and all unit are the same
         memory = '%d %s' % (total, unit)
@@ -31,6 +32,7 @@ class hostinfo(Task):
         print 'manufacturer:', manufacturer
         print 'product:', product
         print 'serial:', serial
+        print 'UUID:', uuid
         print 'cpu:', '\n'.join(cpu)
         print 'memory:', memory
 
