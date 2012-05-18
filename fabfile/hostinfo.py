@@ -1,4 +1,4 @@
-from fabric.api import env, run, sudo, hide
+from fabric.api import env, run, sudo
 from fabric.tasks import Task
 
 from state import update_host
@@ -14,36 +14,34 @@ class hostinfo(Task):
         update_host(uuid, ips, **info)
 
     def query_ip(self):
-        with hide('stdout'):
-            msg = run('ifconfig').stdout
-
+        msg = run('ifconfig').stdout
         ips = filter(lambda (proto, addr): proto == 'inet' and addr not in ('127.0.0.1', '::1'),
                      [ line.split()[:2] for line in msg.split('\n') \
                            if 'inet' in line ])
         return ips
 
     def query_dmi(self):
-        with hide('stdout'):
-            dmi = sudo('dmidecode -t system -t processor -t memory').stdout
+        dmi = sudo('dmidecode -t system -t processor -t memory').stdout
 
         info = self.parse_dmi(dmi)
-        def escval(val):
-            return None if val in ('Not Specified', '') else val
+        sysinfo = info['System Information'][0]
 
-        sysinfo = escval(info['System Information'][0])
-        manufacturer = escval(sysinfo['Manufacturer'])
-        product = escval(sysinfo['Product Name'])
-        uuid = escval(sysinfo['UUID'])
-        serial = escval(sysinfo['Serial Number'])
-        cpu = filter(None, [ escval(i['Version']) for i in info['Processor Information'] ])
+        manufacturer = sysinfo['Manufacturer']
+        product = sysinfo['Product Name']
+        uuid = sysinfo['UUID']
+        serial = sysinfo['Serial Number']
+
+        cpu = [ i['Version'] for i in info['Processor Information']]
+
         sizes = [ i['Size'].split() for i in info['Memory Device'] if i['Size'][0].isdigit() ]
         total = sum([ int(i[0]) for i in sizes ])
         unit = sizes[0][1] # assume that at least one memory and all unit are the same
         memory = '%d %s' % (total, unit)
+
         return uuid, {'manufacturer': manufacturer,
                       'product': product,
                       'serial': serial,
-                      'cpu': '|'.join(cpu),
+                      'cpu': '\n'.join(cpu),
                       'memory': memory,
                       }
 
