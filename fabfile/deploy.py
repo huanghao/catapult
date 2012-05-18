@@ -3,9 +3,9 @@ import datetime
 
 from fabric.api import abort, cd, runs_once, run, env
 from fabric.contrib import project
+from fabric.tasks import Task
 
 from state import myenv
-from ops import ProjTask
 import rcs
 import schemas
 
@@ -14,16 +14,17 @@ def get_local_time():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
-class deploy(ProjTask):
+class Deploy(Task):
+    '''
+    deploy specific version of some project to remote servers
+    usage: deploy [ver]
+    '''
 
-    def work(self, ver=None, *args, **kw):
+    name = 'deploy'
+
+    def run(self, ver=None, *args, **kw):
         self.pre()
-
-#        if ver is None:
-#            ver = prompt('No version found. Please specify version:')
-
         self.deploy(ver, *args, **kw)
-
         self.post()
 
     def pre(self):
@@ -73,9 +74,15 @@ class deploy(ProjTask):
         #sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
 
 
-class check(ProjTask):
 
-    def work(self, *args, **kw):
+class Check(Task):
+    '''
+    check version/revision consistency among project servers
+    '''
+
+    name = 'check'
+
+    def run(self, *args, **kw):
         schema = schemas.Cap(myenv.home)
 
         info = schema.tag_info()
@@ -88,7 +95,12 @@ class check(ProjTask):
             abort('corrupt version %s on host %s' % (str(info), env.host))
 
 
-class ideploy(deploy):
+class IncrementalDeploy(Deploy):
+    '''
+    only checkout the difference between two version, and incrementally deploy to remote servers
+    '''
+
+    name = 'ideploy'
 
     def deploy(self, ver, rev1=None, rev2=None, *args, **kw):
         rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver, 'ver')

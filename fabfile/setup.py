@@ -1,17 +1,22 @@
-from fabric.api import settings, sudo, hide, abort, run, env
-from fabric.tasks import execute
+from fabric.api import settings, sudo, hide, abort, run, env, task
+from fabric.tasks import Task, execute
 
 from state import myenv
-from ops import is_owner, ProjTask, path_exists, is_python_module, symlink_python_module
+from cmds import is_owner, path_exists, is_python_module, symlink_python_module, mine
 import schemas
 
 
-class basic_setup(ProjTask):
 
-    def work(self):
-        home = myenv.home
-        self.make_workspace(home)
-        schemas.Cap(home).build()
+class BasicSetup(Task):
+    '''
+    basic setup, make workspace and build up hierarchical directory structure
+    '''
+
+    name = 'basic_setup'
+
+    def run(self):
+        self.make_workspace(myenv.home)
+        schemas.Cap(myenv.home).build()
 
     def make_workspace(self, home):
         if path_exists(home):
@@ -24,25 +29,20 @@ make sure you want to reinstall the project:%s' % home)
                     sudo('chown %s %s' % (myenv.owner, home))
 
 
-class exterminate(ProjTask):
 
-    def work(self):
-        '''
-        it is extremely dangous, and it can only be used for testing
-        '''
-        sudo('rm -rf %s' % myenv.home)
+class Setup(BasicSetup):
+    '''
+    setup for python project, if version assigned, deploy it and link python-module
+    usage: setup [ver]
+        ver     tag to deploy
+    '''
 
+    name = 'setup'
 
-
-class setup(basic_setup):
-
-    def work(self, ver=None, *args, **kw):
+    def run(self, ver=None, *args, **kw):
         self.pre()
-
-        super(setup, self).work()
-
+        super(Setup, self).run()
         self.post()
-
         if ver:
             self.deploy_and_link_py(ver, *args, **kw)
     
@@ -60,7 +60,7 @@ class setup(basic_setup):
         bak = env.hosts
         env.hosts = [env.host] #it's tricky
 
-        execute('deploy', myenv.name, ver, *args, **kw)
+        execute('deploy', ver, *args, **kw)
         self.link_py()
 
         env.hosts = bak
@@ -72,3 +72,23 @@ class setup(basic_setup):
 
         for path in myenv.link_py_modules:
             symlink_python_module(path)
+
+
+@task
+def rollback():
+    '''
+    rollback to previous version
+    '''
+    schema = schemas.Cap(myenv.home)
+    curr = schema.current_release()
+    prev = schema.get_previous()
+    schema.switch_current_to(prev)
+    mine("rm -rf '%s'" % curr)
+
+
+@task
+def exterminate():
+    '''
+    rm project workspace! it is extremely dangous, and it can only be used for testing
+    '''
+    sudo('rm -rf %s' % myenv.home)

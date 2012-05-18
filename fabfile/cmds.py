@@ -1,9 +1,9 @@
 import os
 
-from fabric.api import sudo, run, prompt, abort, local, settings, hide
-from fabric.tasks import Task
+from fabric.api import sudo, run, local, settings, hide
 
-from state import myenv, load_proj_env
+from state import myenv
+
 
 def lpath_exists(path):
     '''
@@ -50,28 +50,3 @@ def symlink_python_module(path):
     sudo('ln -s %s %s' % (path, target))
 
 
-class ProjTask(Task):
-    '''
-    base class for project oriented task
-    '''
-    proj = None
-
-    def set_proj(self, proj):
-        self.proj = proj
-
-    def run(self, proj=None, *args, **kw):
-        if proj:
-            self.set_proj(proj)
-
-        if not self.proj:
-            proj = prompt('No project found. Please specify project:')
-            if proj:
-                self.set_proj(proj)
-            else:
-                abort('Invalid project name:%s' % proj)
-
-        load_proj_env(self.proj)
-        self.work(*args, **kw)
-
-    def work(*args, **kw):
-        raise NotImplemented

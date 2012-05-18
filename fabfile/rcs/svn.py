@@ -2,7 +2,7 @@ import os
 
 from fabric.api import abort, local, lcd
 
-from ..ops import lpath_exists
+from ..cmds import lpath_exists
 from ..state import myenv
 
 

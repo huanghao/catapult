@@ -1,4 +1,5 @@
-import os,sys
+import os
+import sys
 
 from fabric.api import env, abort, runs_once
 from fabric.state import _AttributeDict
@@ -76,4 +77,5 @@ def load_project_fields(project):
 
     hosts = [ ip.addr for ip in project.ips.all() ]
     if hosts:
-        myenv.hosts = hosts
+        print 'set env.hosts:', hosts
+        env.hosts = hosts

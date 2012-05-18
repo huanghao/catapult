@@ -2,8 +2,7 @@ import os
 
 from fabric.api import settings, abort, lcd, local, cd
 
-
-from ops import mine, path_exists
+from cmds import mine, path_exists
 
 
 class Cap(object):
