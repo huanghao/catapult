@@ -102,6 +102,16 @@ class Cap(object):
         curr = self.current_release()
         mine("echo '%s' > '%s'" % (curr, os.path.join(path, 'PREV')))
 
+    def get_previous(self, rel=None):
+        if rel:
+            rel = self.release(rel, True)
+        else:
+            rel = self.current_release(True)
+        prev = os.path.join(rel, 'PREV')
+        if path_exists(prev):
+            return mine("cat '%s'" % prev).stdout
+        abort('no avaiable previous version')
+
     def build(self):
         '''
         build hierarchical directory structure in home

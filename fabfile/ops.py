@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import sudo, cd, run, prompt, abort, local, lcd, settings, hide
+from fabric.api import sudo, run, prompt, abort, local, settings, hide
 from fabric.tasks import Task
 
 from state import myenv, load_proj_env
@@ -28,57 +28,12 @@ def mine(*args, **kw):
     return sudo(*args, user=myenv.owner, **kw)
 
 
-def get_current_rel():
-    cur = None
-    with cd(myenv.home):
-        if path_exists('current'):
-            cur = os.path.join(myenv.home, run('readlink current').stdout)
-    return cur if cur and path_exists(cur) else None
-
-
-def get_latest_rel():
-    with cd(myenv.home):
-        return run('ls -At releases | head -n 1').stdout
-
-def relink_current_rel(rel, link_prev=True):
-    if not os.path.isabs(rel):
-        rel = os.path.join(myenv.home, rel)
-
-    if path_exists(rel):
-        if link_prev:
-            cur = get_current_rel()
-            if cur:
-                with cd(rel):
-                    mine("echo '%s' > PREV" % cur)
-
-        with cd(myenv.home):
-            mine('rm -f current')
-            mine('ln -s %s current' % rel)
-    else:
-        abort('no such path, relink current failed:%s' % rel)
-
-
-def get_prev_rel():
-    prev = None
-    with cd(os.path.join(myenv.home, 'current')):
-        if path_exists('PREV'):
-            prev = run('cat PREV').stdout
-
-    return prev if prev and path_exists(prev) else None
-
-
 def is_owner(path):
     uname = run('uname').stdout
     if uname == 'FreeBSD':
         return mine('id -u').stdout == run("stat -f'%%u' %s" % path).stdout
     else: #if uname == 'Linux':
         return mine('id -u').stdout == run("stat -c'%%u' %s" % path).stdout
-
-
-def mark(target, tag, rev):
-    with lcd(target):
-        local("echo '%s' > TAG" % tag)
-        local("echo '%s' > REV" % rev)
 
 
 def is_python_module(path):
@@ -93,8 +48,6 @@ def symlink_python_module(path):
     if path_exists(target):
         sudo('rm %s' % target)
     sudo('ln -s %s %s' % (path, target))
-
-
 
 
 class ProjTask(Task):

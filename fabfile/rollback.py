@@ -1,20 +1,13 @@
-from fabric.api import cd, abort
-
 from state import myenv
-from ops import mine, get_current_rel, ProjTask, get_prev_rel, relink_current_rel
+from ops import mine, ProjTask
+import schemas
 
 
 class rollback(ProjTask):
 
     def work(self, *args, **kw):
-        with cd(myenv.home):
-            prev = get_prev_rel()
-            if not prev:
-                abort('not avaiable previous version')
-
-            curr = get_current_rel()
-            if curr == prev:
-                abort('loop version link')
-
-            relink_current_rel(prev, False)
-            mine('rm -rf %s' % curr)
+        schema = schemas.Cap(myenv.home)
+        curr = schema.current_release()
+        prev = schema.get_previous()
+        schema.switch_current_to(prev)
+        mine("rm -rf '%s'" % curr)
