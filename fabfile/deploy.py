@@ -1,7 +1,7 @@
 import os
 import datetime
 
-from fabric.api import abort, cd, runs_once, prompt, run, env
+from fabric.api import abort, cd, runs_once, run, env
 from fabric.contrib import project
 
 from state import myenv

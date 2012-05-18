@@ -28,12 +28,6 @@ def mine(*args, **kw):
     return sudo(*args, user=myenv.owner, **kw)
 
 
-def count_releases():
-    with cd(myenv.home):
-        n = run('find releases -type d -maxdepth 1 | wc -l').stdout
-        return int(n) - 1
-
-        
 def get_current_rel():
     cur = None
     with cd(myenv.home):

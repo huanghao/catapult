@@ -1,4 +1,6 @@
-from fabric.api import env, run, sudo
+import re
+
+from fabric.api import run, sudo
 from fabric.tasks import Task
 
 from state import update_host
@@ -10,6 +12,8 @@ def gen_lines(output):
 
 
 class hostinfo(Task):
+
+    ipv4 = re.compile(r'\d+\.\d+\.\d+\.\d+')
 
     def run(self, *args, **kw):
         uuid, info = self.query_dmi()
@@ -28,13 +32,14 @@ class hostinfo(Task):
 
             flag = line[0].isspace()
             if not flag:
-                inter = line.split(':')[0]
-                interface = None if inter == 'lo0' else inter
+                inter = line.split(None, 1)[0].rstrip(':')
+                interface = None if inter.startswith('lo') else inter
             elif interface:
                 cols = line.split()
                 if len(cols) > 1:
-                    proto, addr = cols[:2]
+                    proto, addr_string = cols[:2]
                     if proto == 'inet':
+                        addr = re.findall(self.ipv4, addr_string)[0]
                         yield interface, proto, addr
 
     def query_dmi(self):
