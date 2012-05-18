@@ -74,8 +74,11 @@ def get_prev_rel():
 
 
 def is_owner(path):
-    return mine('id -u').stdout == run("stat -c'%%u' %s" % path).stdout #linux
-    #return mine('id -u').stdout == run("stat -f'%%u' %s" % path).stdout #freebsd
+    uname = run('uname').stdout
+    if uname == 'FreeBSD':
+        return mine('id -u').stdout == run("stat -f'%%u' %s" % path).stdout
+    else: #if uname == 'Linux':
+        return mine('id -u').stdout == run("stat -c'%%u' %s" % path).stdout
 
 
 def mark(target, tag, rev):

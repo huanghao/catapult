@@ -1,6 +1,6 @@
 import os,sys
 
-from fabric.api import env, abort
+from fabric.api import env, abort, runs_once
 from fabric.state import _AttributeDict
 
 
@@ -12,12 +12,40 @@ myenv = env.myenv = _AttributeDict({
 })
 
 
+@runs_once
 def install_webadmin_path():
     cwd = os.path.dirname(os.path.abspath(__file__))
     cata_path = os.path.join(cwd, '..')
     sys.path.insert(0, cata_path)
 
     os.environ['DJANGO_SETTINGS_MODULE'] = 'webadmin.settings'
+
+
+def update_host(uuid, ips, **info):
+    install_webadmin_path()
+
+    from webadmin.core.models import Host, IP
+    try:
+        host = Host.objects.get(uuid=uuid)
+    except Host.DoesNotExist:
+        host = Host(uuid=uuid)
+
+    for key, val in info.iteritems():
+        if not val or not hasattr(host, key):
+            continue
+        setattr(host, key, val)
+    host.save()
+    #FIXME: add transaction
+    
+    for proto, addr in ips:
+        try:
+            ip = IP.objects.get(addr=addr)
+        except IP.DoesNotExist:
+            IP(addr=addr, host=host).save()
+        else:
+            if ip.host != host:
+                ip.host = host
+                ip.save()
 
 
 def load_proj_env(proj):
@@ -46,4 +74,4 @@ def load_project_fields(project):
                    'link_py_modules',
                    )))
 
-    myenv.hosts = [ h.ip for h in project.hosts.all() ]
+    myenv.hosts = [ ip.addr for ip in project.ips.all() ]

@@ -1,20 +1,32 @@
 from fabric.api import env, run, sudo, hide
 from fabric.tasks import Task
 
+from state import update_host
+
 
 class hostinfo(Task):
 
     def run(self, *args, **kw):
-        self.query_dmi()
+        uuid, info = self.query_dmi()
+        ips = self.query_ip()
+        info['name'] = run('hostname').stdout
+
+        update_host(uuid, ips, **info)
+
+    def query_ip(self):
+        with hide('stdout'):
+            msg = run('ifconfig').stdout
+
+        ips = filter(lambda (proto, addr): proto == 'inet' and addr not in ('127.0.0.1', '::1'),
+                     [ line.split()[:2] for line in msg.split('\n') \
+                           if 'inet' in line ])
+        return ips
 
     def query_dmi(self):
         with hide('stdout'):
             dmi = sudo('dmidecode -t system -t processor -t memory').stdout
 
-        info = self.parse(dmi)
-        #from pprint import pprint
-        #pprint(info)
-        #print '-'*10
+        info = self.parse_dmi(dmi)
         def escval(val):
             return None if val in ('Not Specified', '') else val
 
@@ -28,15 +40,14 @@ class hostinfo(Task):
         total = sum([ int(i[0]) for i in sizes ])
         unit = sizes[0][1] # assume that at least one memory and all unit are the same
         memory = '%d %s' % (total, unit)
+        return uuid, {'manufacturer': manufacturer,
+                      'product': product,
+                      'serial': serial,
+                      'cpu': '|'.join(cpu),
+                      'memory': memory,
+                      }
 
-        print 'manufacturer:', manufacturer
-        print 'product:', product
-        print 'serial:', serial
-        print 'UUID:', uuid
-        print 'cpu:', '\n'.join(cpu)
-        print 'memory:', memory
-
-    def parse(self, dmi):
+    def parse_dmi(self, dmi):
         def gen_lines():
             for line in dmi.split('\n'):
                 yield line.rstrip()

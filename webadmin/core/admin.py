@@ -1,6 +1,4 @@
 from django.contrib import admin
-from webadmin.core.models import Proj, Host, IDC
+from webadmin.core.models import Proj, Host, IDC, IP
 
-admin.site.register(Proj)
-admin.site.register(Host)
-admin.site.register(IDC)
+admin.site.register([Proj, Host, IDC, IP])

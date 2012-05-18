@@ -17,34 +17,40 @@ class Proj(models.Model):
     post_deploy     = models.TextField(blank=True)
     pre_rollback    = models.TextField(blank=True)
     post_rollback   = models.TextField(blank=True)
-    hosts           = models.ManyToManyField('Host', blank=True)
+    ips             = models.ManyToManyField('IP', null=True)
 
     def __unicode__(self):
         return self.name
 
 
+class IP(models.Model):
+
+    addr = models.CharField(max_length=255, null=False, blank=False, unique=True)
+    host = models.ForeignKey('Host', null=True)
+
+    def __unicode__(self):
+        return self.addr
+
+
 class Host(models.Model):
 
-    ip              = models.CharField(max_length=255, unique=True)
+    uuid            = models.CharField(max_length=255, null=False, blank=False, unique=True)
     name            = models.CharField(max_length=255, blank=True)
     model           = models.CharField(max_length=255, blank=True)
-    description     = models.TextField(blank=True)
     manufacturer    = models.CharField(max_length=255, blank=True)
     product         = models.CharField(max_length=255, blank=True)
     serial          = models.CharField(max_length=255, blank=True)
-    uuid            = models.CharField(max_length=255, unique=True)
     cpu             = models.CharField(max_length=255, blank=True)
     memory          = models.CharField(max_length=255, blank=True)
     disk            = models.CharField(max_length=255, blank=True)
     assetno         = models.CharField(max_length=255, blank=True)
     cabinet         = models.CharField(max_length=255, blank=True)
     position        = models.CharField(max_length=255, blank=True)
+    description     = models.TextField(blank=True)
     idc             = models.ForeignKey('IDC', null=True)
 
     def __unicode__(self):
-        if not self.name or self.name == self.ip:
-            return self.ip
-        return '%s(%s)' % (self.name, self.ip)
+        return self.uuid if not self.name else self.name
 
     
 class IDC(models.Model):
