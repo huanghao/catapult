@@ -6,10 +6,8 @@ from fabric.state import _AttributeDict
 
 
 myenv = env.myenv = _AttributeDict({
-    'ltmp': '/tmp', # local temp path
+    #'ltmp': '/tmp', # local temp path
     'tmp': '/tmp', # remote temp path
-    #FIXME: tmp path need to cleanup automaticly
-    #FIXME: workcopy used by "svn export" should be remove automaticly
 })
 
 
