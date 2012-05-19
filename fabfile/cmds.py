@@ -1,4 +1,5 @@
 import os
+import atexit
 
 from fabric.api import sudo, run, local, settings, hide
 
@@ -48,5 +49,22 @@ def symlink_python_module(path):
     if path_exists(target):
         sudo('rm %s' % target)
     sudo('ln -s %s %s' % (path, target))
+
+
+class FileCleaner(object):
+
+    def __init__(self):
+        self.names = []
+        atexit.register(self.clean)
+
+    def __call__(self, name):
+        self.names.append(name)
+
+    def clean(self):
+        for name in self.names:
+            print 'unlink', name
+            local("rm -rf '%s'" % name)
+
+unlink = FileCleaner()
 
 

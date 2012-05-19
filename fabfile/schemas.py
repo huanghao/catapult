@@ -1,6 +1,7 @@
 import os
+import datetime
 
-from fabric.api import settings, abort, lcd, local, cd
+from fabric.api import settings, abort, lcd, local, cd, runs_once
 
 from cmds import mine, path_exists
 
@@ -39,31 +40,41 @@ class Cap(object):
             abort('no such release:%s' % rel)
         return rel
 
-    def copy_to_release(self, src, rel):
-        rel = self.release(rel)
+    @runs_once
+    def get_rel_id(self):
+        if not hasattr(self, '_rel_id'):
+            self._rel_id = self.release(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        return self._rel_id
+
+    def push_to_release(self, src):
+        rel = self.get_rel_id()
         if path_exists(rel):
             abort('try to overwrite a exists release:%s->%s' % (src, rel))
         mine("cp -r '%s' '%s'" % (src, rel))
+        return rel
 
-    def overwrite_to_release(self, src, rel):
-        rel = self.release(rel)
+    def overwrite_to_release(self, src):
+        rel = self.get_rel_id()
         if path_exists(rel):
             abort('try to overwrite a exists release:%s->%s' % (src, rel))
         curr = self.current_release(True)
         mine("cp -r '%s' '%s'" % (curr, rel))
         mine("cp -r '%s'/* '%s'" % (src, rel))
+        return rel
 
-    def remove_useless(self, rel, Dfiles):
-        rel = self.release(rel, True)
+    def remove_useless(self, Dfiles):
+        rel = self.get_rel_id()
         with cd(rel):
             for name in Dfiles:
                 mine('rm -rf %s' % name.base)
 
-    def switch_current_to(self, rel):
+    def switch_current_to(self, rel=None):
         '''
         switch curernt link to rel.
         if operation failed, leave current link unchanged
         '''
+        if rel is None:
+            rel = self.get_rel_id()
         path = self.release(rel, True)
 
         def link_to():
@@ -93,11 +104,11 @@ class Cap(object):
         else:
             link_to()
 
-    def save_current_for_rollback(self, rel):
+    def save_current_for_rollback(self):
         if not path_exists(self.current):
             #for the first time deploy, there is no current link
             return
-        path = self.release(rel, True)
+        path = self.get_rel_id()
         curr = self.current_release()
         mine("echo '%s' > '%s'" % (curr, os.path.join(path, 'PREV')))
 

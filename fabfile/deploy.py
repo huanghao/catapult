@@ -1,17 +1,14 @@
 import os
-import datetime
+import tempfile
 
-from fabric.api import abort, cd, runs_once, run, env
+from fabric.api import abort, runs_once, run, env
 from fabric.contrib import project
 from fabric.tasks import Task
 
 from state import myenv
+from cmds import unlink
 import rcs
 import schemas
-
-
-def get_local_time():
-    return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
 class Deploy(Task):
@@ -41,38 +38,31 @@ class Deploy(Task):
         rc = rcs.create(myenv.cvs_model, myenv.cvs_path, ver)
         schema = schemas.Cap(myenv.home)
 
-        pid, workcopy = self.make_workcopy(rc, schema)
+        workcopy = self.make_workcopy(rc, schema)
+        self.upload(schema, workcopy)
 
-        self.upload(schema, workcopy, pid)
-
-        schema.save_current_for_rollback(pid) #TODO: move these two lines to self.work, it's same in ideploy task
-        schema.switch_current_to(pid)
+        schema.save_current_for_rollback()
+        schema.switch_current_to()
 
     @runs_once #runs_once is incompatible with --parallel
     def make_workcopy(self, rc, schema):
-        pid = get_local_time()
-        workcopy = os.path.join(myenv.ltmp, pid)
+        workcopy = tempfile.mktemp()
+        unlink(workcopy)
 
         rc.export(workcopy)
         schema.mark(rc, workcopy)
-        return pid, workcopy
+        return workcopy
 
-    def upload(self, schema, workcopy, pid):
-        with cd(myenv.tmp):
-            #FIXME: i think it a bug
-            #when calling the upload_project function,
-            #must cd to remote target directory,
-            #otherwise it will fail to find the uploaded file.
-
-            #TODO: this function will do tar,untar,remove many times in localhost
-            project.upload_project(workcopy, myenv.tmp)
-        schema.copy_to_release(os.path.join(myenv.tmp, pid), pid)
-        #FIXME: this is a bug, if localhost is one of the remote hosts,
-        #workcopy dir and upload target dir are the same
-        #and this rm will remove the dir,
-        #when comming the second host, deploy will failed to find the workcopy dir
-        #sudo('rm -rf %s' % os.path.join(myenv.tmp, pid))
-
+    def upload(self, schema, workcopy):
+        tmpdir = os.path.join(myenv.tmp,
+                              os.path.basename(tempfile.mktemp()))
+        run("mkdir '%s'" % tmpdir)
+        try:
+            project.upload_project(workcopy, tmpdir)
+            schema.push_to_release(os.path.join(tmpdir,
+                os.path.basename(workcopy)))
+        finally:
+            run("rm -rf '%s'" % tmpdir)
 
 
 class Check(Task):
@@ -107,24 +97,30 @@ class IncrementalDeploy(Deploy):
         schema = schemas.Cap(myenv.home)
         ver1 = schema.tag_info()['TAG']
 
-        pid, workcopy, Dfiles = self.make_workcopy(rc, schema, ver1, ver, rev1, rev2)
+        workcopy, Dfiles = self.make_workcopy(rc, schema, ver1, ver, rev1, rev2)
 
-        self.upload(schema, workcopy, pid)
+        self.upload(schema, workcopy)
 
-        schema.save_current_for_rollback(pid)
-        schema.remove_useless(pid, Dfiles)
-        schema.switch_current_to(pid)
+        schema.save_current_for_rollback()
+        schema.remove_useless(Dfiles)
+        schema.switch_current_to()
 
-    def upload(self, schema, workcopy, pid):
-        with cd(myenv.tmp):
-            project.upload_project(workcopy, myenv.tmp)
-        schema.overwrite_to_release(os.path.join(myenv.tmp, pid), pid)
+    def upload(self, schema, workcopy):
+        tmpdir = os.path.join(myenv.tmp,
+                              os.path.basename(tempfile.mktemp()))
+        run("mkdir '%s'" % tmpdir)
+        try:
+            project.upload_project(workcopy, tmpdir)
+            schema.overwrite_to_release(os.path.join(tmpdir,
+                os.path.basename(workcopy)))
+        finally:
+            run("rm -rf '%s'" % tmpdir)
 
     @runs_once
     def make_workcopy(self, rc, schema, ver1, ver2, rev1, rev2):
-        pid = get_local_time()
-        workcopy = os.path.join(myenv.ltmp, pid)
+        workcopy = tempfile.mktemp()
+        unlink(workcopy)
 
         Dfiles = rc.iexport(workcopy, ver1, ver2, rev1, rev2)
         schema.mark(rc, workcopy)
-        return pid, workcopy, Dfiles
+        return workcopy, Dfiles
