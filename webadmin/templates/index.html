@@ -27,29 +27,47 @@ function inc_fetch(url, onmsg, onclose) {
 
 function add_line(msg) {
     var line = $('<div class="output">').text(msg);
+    if (msg.match(/^\[.*\] Executing task/)) {
+        line.css('background-color', 'lightSteelBlue');
+    }
     $('.stdout').append(line);
     scrollTo(line.offset().left, line.offset().top);
 }
 
+buf = '';
 function echo(msg) {
+    msg = buf + msg;
+    buf = '';
+
+    var pos = msg.lastIndexOf('\n');
+    if (pos == -1) {
+        buf = msg;
+        return;
+    }
+
+    msg = msg.substring(0, pos+1);
+    buf = msg.substring(pos+1);
+
     var lines = msg.split('\n');
     for (var i=0; i<lines.length; ++i)
 	add_line(lines[i]);
 }
 
-function term() {
-    $.ajax('/term', {success: function(data) {
-	console.debug(data);
-    }});
+function onclose() {
+    if (buf != '') {
+        add_line(buf);
+        buf = '';
+    }
+    add_line(">>>");
 }
+
 </script>
 
 
-<h1>Detail</h1>
-<div class='stdout' style='border:1px solid blue'></div>
+<h1>Terminal</h1>
+<div class='stdout'></div>
 
-<input id='start' type='button' value='start' onclick='inc_fetch("/poll", echo, function() {add_line(">>>")})' />
-<input id='start' type='button' value='term' onclick='term()' />
+<input id='start' type='button' value='start' onclick='inc_fetch("/poll", echo, onclose)' />
 
 <script>
 </script>

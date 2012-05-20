@@ -1,52 +1,35 @@
-from subprocess import Popen, PIPE, STDOUT
+import os
+import pty
 
 
-proc = None
+def run(*args):
+    pid, fd = pty.fork()
+    if pid == 0:
+        os.execlp(*args)
+        #child never gets here
 
-def run(cmd):
-    #TODO: how to cancel the background fab job
-    global proc
-    proc = p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=1)
     while 1:
-        line = p.stdout.readline()
-        if not line:
+        try:
+            output = os.read(fd, 1024)
+        except OSError, e:
+            #TODO: find a nice way to do it
+            if e.errno == 5: #slave fd had close by chlid
+                output = ''
+            else:
+                raise
+
+        if not output:
             break
-        #FIXME: still have problem with the output
-        # now the output is not yield by linewise
-        # maybe the fab process buffered its output
-        yield line
+        yield output
+    os.waitpid(pid, 0)
 
-def stop():
-    global proc
-    p = proc
-    proc = None
-    
-    if p and p.poll() is None:
-        p.terminate()
-        p.wait()
-        return 'killed'
-    return 'null'
 
-def fab():
-    import os
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        '..', '..', 'fabfile')
-    return run([
-            '/usr/local/bin/fab',
-            '-f',
-            path,
-            '-H',
-            '172.16.26.38,172.16.26.39',
-            'setup:nds'])
-
+def run_test():
+    dirname = os.path.dirname(os.path.abspath(__file__))
+    return run('python', 'python',
+               os.path.join(dirname, '..', '..', 'tests', 'test.py'))
 
 
 if __name__ == '__main__':
-    def sig_handler(sig, stack):
-        print 'recv %d' % sig
-
-    import signal
-    signal.signal(signal.SIGINT, sig_handler)
-
-    for line in fab():
-        print line,
+    for output in run_test():
+        print output,
