@@ -1,0 +1,50 @@
+id: 0-1.0-6.r6/0
+type: dir
+pred: 0-1.0.r5/246
+count: 3
+text: 5 165 68 68 3a81be36bdd8bb3c11663ca4785b8fe9
+cpath: /tags/v1.1
+copyfrom: 5 /trunk
+
+PLAIN
+K 4
+v1.0
+V 16
+dir 0-1.0-4.r4/0
+K 4
+v1.1
+V 16
+dir 0-1.0-6.r6/0
+END
+ENDREP
+id: 0-2.0.r6/223
+type: dir
+pred: 0-2.0.r4/192
+count: 2
+text: 6 144 66 66 9b7b0f09cdadd19db6dbbe11c487d0dd
+cpath: /tags
+copyroot: 0 /
+
+PLAIN
+K 4
+tags
+V 16
+dir 0-2.0.r6/223
+K 5
+trunk
+V 16
+dir 0-1.0.r5/246
+END
+ENDREP
+id: 0.0.r6/437
+type: dir
+pred: 0.0.r5/461
+count: 6
+text: 6 357 67 67 83804b7931f5329ae045687f9ff8c806
+cpath: /
+copyroot: 0 /
+
+0-1._0.t5-5 add-dir false false /tags/v1.1
+5 /trunk
+
+437 563
