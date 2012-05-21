@@ -17,4 +17,5 @@ urlpatterns = patterns('',
 
     url(r'^$', 'webadmin.core.views.index'),
     url(r'^poll/$', 'webadmin.core.views.poll'),
+    url(r'^term/$', 'webadmin.core.views.term'),
 )

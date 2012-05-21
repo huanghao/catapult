@@ -1,6 +1,10 @@
 #include <stdio.h>
-#include <pty.h>
-#include <utmp.h>
+//#include <pty.h>
+//#include <utmp.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <termios.h>
+#include <libutil.h>
 
 int main(void)
 {
@@ -16,7 +20,7 @@ int main(void)
         dup(fds);
         close(2);
         dup(fds);
-        execlp("python", "python", "/home/huanghao/workspace/catapult/tests/test.py", 0);
+        execlp("python", "python", "/home/huanghao/workspace/catapult/tests/echo.py", 0);
     } else {
         close(fds);
         while ((n = read(fdm, name, sizeof(name))) > 0)

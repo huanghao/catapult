@@ -61,6 +61,12 @@ function onclose() {
     add_line(">>>");
 }
 
+function term() {
+    $.get('/term', function(data) {
+        add_line(data);
+    });
+}
+
 </script>
 
 
@@ -68,6 +74,7 @@ function onclose() {
 <div class='stdout'></div>
 
 <input id='start' type='button' value='start' onclick='inc_fetch("/poll", echo, onclose)' />
+<input id='term' type='button' value='term' onclick='term()' />
 
 <script>
 </script>
