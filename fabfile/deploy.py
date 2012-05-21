@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from fabric.api import abort, runs_once, run, env
+from fabric.api import abort, runs_once, run, env, cd
 from fabric.contrib import project
 from fabric.tasks import Task
 
@@ -58,7 +58,8 @@ class Deploy(Task):
                               os.path.basename(tempfile.mktemp()))
         run("mkdir '%s'" % tmpdir)
         try:
-            project.upload_project(workcopy, tmpdir)
+            with cd(tmpdir): #it's a bug in project.upload_project, it had been fixed in latest release
+                project.upload_project(workcopy, tmpdir)
             schema.push_to_release(os.path.join(tmpdir,
                 os.path.basename(workcopy)))
         finally:
@@ -110,7 +111,8 @@ class IncrementalDeploy(Deploy):
                               os.path.basename(tempfile.mktemp()))
         run("mkdir '%s'" % tmpdir)
         try:
-            project.upload_project(workcopy, tmpdir)
+            with cd(tmpdir):
+                project.upload_project(workcopy, tmpdir)
             schema.overwrite_to_release(os.path.join(tmpdir,
                 os.path.basename(workcopy)))
         finally:
