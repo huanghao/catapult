@@ -1,4 +1,5 @@
 import os
+import functools
 
 from fabric.api import abort, local, lcd
 
@@ -6,6 +7,7 @@ from ..cmds import lpath_exists
 from ..state import myenv
 
 
+@functools.total_ordering
 class SmartName(object):
 
     def __init__(self, full_path_or_repo, tag=None, base=None):
@@ -37,21 +39,8 @@ class SmartName(object):
     def __eq__(self, r):
         return str(self) == str(r)
 
-    def __ne__(self, r):
-        return not self == r
-
     def __lt__(self, r):
         return str(self) < str(r)
-
-    def __le__(self, r):
-        return (self == r) or (self < r)
-
-    def __gt__(self, r):
-        return str(self) > r
-
-    def __ge__(self, r):
-        return (self == r) or (self > r)
-
 
 
 class SVN(object):
